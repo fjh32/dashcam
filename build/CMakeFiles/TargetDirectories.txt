@@ -1,0 +1,3 @@
+/home/frank/Code/dashcam/build/CMakeFiles/dashcam.dir
+/home/frank/Code/dashcam/build/CMakeFiles/edit_cache.dir
+/home/frank/Code/dashcam/build/CMakeFiles/rebuild_cache.dir

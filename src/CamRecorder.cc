@@ -219,32 +219,50 @@ void CamRecorder::saveRecordings(int seconds_back_to_save) {
     std::time_t threshold_time = current_time - seconds_back_to_save;
 
     // do this so we don't hit infinite loop of finding currentlyRecordingVideoName
-    auto dir_contents = getRecordingDirContents();
 
-    for (const auto& entry : dir_contents) {
-            auto file_time = std::filesystem::last_write_time(entry);
-            // Convert to system clock time point
-            auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-                file_time - std::filesystem::file_time_type::clock::now()
-                + std::chrono::system_clock::now());
-             // Convert to time_t
-            std::time_t file_timestamp = std::chrono::system_clock::to_time_t(sctp);
+    // if seconds_back_to_save is less than VIDEO_DURATION, then we should save only the current recording
+    // otherwise, we should save everything within threshold_time
+    if(seconds_back_to_save < VIDEO_DURATION) {
+        std::string filename = currentlyRecordingVideoName;
+        std::string baseFilename = filename.substr(filename.find_last_of("/\\") + 1);
+        std::string savePath = saveDir + baseFilename;
 
+        std::lock_guard<std::mutex> lock(writeMutex);
+        writer.release();
+        writer = setupNewVideoWriter();
 
-            if (file_timestamp > threshold_time) {
-                std::string filename = entry.path().filename().string();
-
-                if (filename.find(currentlyRecordingVideoName) != std::string::npos) {
-                    std::lock_guard<std::mutex> lock(writeMutex);
-                    writer.release();
-                    writer = setupNewVideoWriter();
-                }
-
-                std::string savePath = saveDir + filename;
-                std::filesystem::copy_file(entry.path(), savePath, std::filesystem::copy_options::overwrite_existing);
-                std::cout << "Saved file: " << filename << std::endl;
-            }
+        std::filesystem::copy_file(filename, savePath, std::filesystem::copy_options::overwrite_existing);
+        std::cout << "Saved file: " << filename << std::endl;
         
+        return;
+    } else {
+
+        auto dir_contents = getRecordingDirContents();
+        for (const auto& entry : dir_contents) {
+                auto file_time = std::filesystem::last_write_time(entry);
+                // Convert to system clock time point
+                auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+                    file_time - std::filesystem::file_time_type::clock::now()
+                    + std::chrono::system_clock::now());
+                // Convert to time_t
+                std::time_t file_timestamp = std::chrono::system_clock::to_time_t(sctp);
+
+
+                if (file_timestamp > threshold_time) {
+                    std::string filename = entry.path().filename().string();
+
+                    if (filename.find(currentlyRecordingVideoName) != std::string::npos) {
+                        std::lock_guard<std::mutex> lock(writeMutex);
+                        writer.release();
+                        writer = setupNewVideoWriter();
+                    }
+
+                    std::string savePath = saveDir + filename;
+                    std::filesystem::copy_file(entry.path(), savePath, std::filesystem::copy_options::overwrite_existing);
+                    std::cout << "Saved file: " << filename << std::endl;
+                }
+            
+        }
     }
 
     
