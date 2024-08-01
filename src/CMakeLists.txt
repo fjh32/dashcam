@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 # Add your source files here
 set(SOURCES
+    utilities.cc
     BluetoothServer.cc
     CamRecorder.cc
     NetStreamServer.cc
@@ -15,6 +16,7 @@ set(SOURCES
 
 # Add your header files here
 set(HEADERS
+    utilities.h
     BluetoothServer.h
     CamRecorder.h
     NetStreamServer.h

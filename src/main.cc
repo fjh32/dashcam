@@ -1,6 +1,24 @@
 #include "CamRecorder.h"
-// using namespace cv;
+#include <iostream>
+#include <signal.h>
+
+using namespace std;
+
+unique_ptr<CamRecorder> camRecorder;
+
+void catch_sigint(int signum);
+
 int main() {
-    CamRecorder camRecorder;
-    camRecorder.recordingLoop();
+    camRecorder = make_unique<CamRecorder>();
+    cout << "Starting recording..." << endl;
+    signal(SIGINT, catch_sigint);
+    
+    camRecorder->recordingLoop();
+}
+
+void catch_sigint(int signum)
+{
+    cout << "Exiting cleanly...\n";
+    camRecorder->stopRecording();
+    exit(0);
 }

@@ -1,0 +1,1 @@
+rm -rf build && ./build.sh && ./build/dashcam 

@@ -1,9 +1,20 @@
 cmake_minimum_required(VERSION 3.5)
-project( dashcam )
+project( dashcam VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 # pkg-config --libs opencv4
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories(src/)
-add_executable( dashcam src/main.cc src/CamRecorder.cc)
+
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+add_executable( dashcam src/main.cc src/CamRecorder.cc src/utilities.cc)
+
+if(NOT CMAKE_BUILD_TYPE OR NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    # add_compile_definitions(DEBUG)
+    target_compile_definitions(dashcam PRIVATE DEBUG)
+endif()
+
 target_link_libraries( dashcam ${OpenCV_LIBS} )

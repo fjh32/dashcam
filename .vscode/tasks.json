@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cmake build dashcam",
+            "type": "shell",
+            "command": "${workspaceFolder}/build.sh",
+            "args": [
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
