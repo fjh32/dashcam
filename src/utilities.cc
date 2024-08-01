@@ -15,3 +15,13 @@ std::string format_time(const char * time_format) {
     ss << std::put_time(tmptr, time_format);
     return ss.str();
 }
+
+std::time_t time_t_from_direntry(std::filesystem::directory_entry dir_entry) {
+    auto file_time = std::filesystem::last_write_time(dir_entry);
+    // Convert to system clock time point
+    auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+        file_time - std::filesystem::file_time_type::clock::now()
+        + std::chrono::system_clock::now());
+    // Convert to time_t
+    return std::chrono::system_clock::to_time_t(sctp);
+}

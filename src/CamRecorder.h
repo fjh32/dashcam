@@ -53,6 +53,7 @@ class CamRecorder {
         void removeListeningPipe();
         void listenOnPipe();
         void cleanupThreadLoop();
+        void deleteOlderFiles(std::time_t threshold_time);
         std::vector<std::filesystem::directory_entry> getRecordingDirContents();
         cv::VideoWriter setupNewVideoWriter();
         // Add private member variables or helper functions here

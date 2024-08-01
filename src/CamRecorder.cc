@@ -32,11 +32,88 @@ CamRecorder::~CamRecorder() {
     writer.release();
 }
 
-cv::VideoWriter CamRecorder::setupNewVideoWriter() {
-    std::string newVideoName = recordingDir + "output_" + formatted_time() + ".mkv";
-    auto newWriter = VideoWriter(newVideoName, VideoWriter::fourcc('X', '2', '6', '4'), FRAME_RATE, Size(width, height));
-    currentlyRecordingVideoName = newVideoName;
-    return newWriter;
+void CamRecorder::recordingLoop() {
+    std::cout << "Recording loop started\n";
+    isRecording = true;
+    recordingThread = std::thread(&CamRecorder::startRecording, this);
+    cleanupThread = std::thread(&CamRecorder::cleanupThreadLoop, this);
+    listenOnPipe();
+}
+
+void CamRecorder::startRecording() {
+    
+    #ifdef DEBUG
+    std::cout << "startRecording()\n";
+    #endif
+    
+    cv::Mat frame;
+    std::time_t start_time = now();
+    while (isRecording) {
+        cap >> frame;
+        if (frame.empty()) {
+            std::cerr << "Error: Could not capture a frame." << std::endl;
+            break;
+        }
+        
+        std::lock_guard<std::mutex> lock(writeMutex);
+        writer.write(frame);
+        // cycle video file every VIDEO_DURATION seconds
+        std::time_t current_time = now();
+        if (current_time - start_time >= VIDEO_DURATION) {
+            std::cout << current_time << " Current time. Start time: " << start_time << std::endl;
+            writer.release();
+            writer = setupNewVideoWriter();
+            start_time = current_time;
+        }
+        // release lock
+    }
+
+    #ifdef DEBUG
+    std::cout << "EXITING startRecording(). this->isRecording " << (isRecording ? "true" : "false") << std::endl;
+    #endif
+}
+
+void CamRecorder::stopRecording() {
+    isRecording = false;
+    recordingThread.join();
+    cleanupThread.join();
+    std::cout << "Recording stopped\n";
+}
+
+void CamRecorder::cleanupThreadLoop() {
+
+    #ifdef DEBUG
+    std::cout << "cleanupThreadLoop()\n";
+    #endif
+
+    time_t start_time = now();
+    std::time_t threshold_time = start_time - DELETE_OLDER_THAN;
+    bool first = true;
+    while(isRecording) {
+
+        time_t current_time = now();
+        if (current_time - start_time >= DELETE_OLDER_THAN || first) {
+            first = false;
+            start_time = current_time;
+            deleteOlderFiles(threshold_time);
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));   
+    }
+    #ifdef DEBUG
+    std::cout << "Closing cleanupThreadLoop()\n";
+    #endif
+}
+
+void CamRecorder::deleteOlderFiles(std::time_t threshold_time) {
+    auto dir_contents = getRecordingDirContents();
+    for(auto &entry : dir_contents) {
+        std::time_t file_timestamp = time_t_from_direntry(entry);
+
+        if (file_timestamp < threshold_time) {
+            std::filesystem::remove(entry);
+            std::cout << "Deleted file: " << entry.path().filename().string() << std::endl;
+        }
+    }
 }
 
 void CamRecorder::createListeningPipe() {
@@ -52,6 +129,104 @@ void CamRecorder::createListeningPipe() {
         }
     }
     std::cout << "Named pipe created at " << PIPE_NAME << std::endl;
+}
+
+void CamRecorder::removeListeningPipe() {
+    // Add removeListeningPipe code here
+    if (unlink(PIPE_NAME) == -1) {
+        std::cerr << "Error removing named pipe: " << strerror(errno) << std::endl;
+        exit(1);
+    }
+    std::cout << "Named pipe removed" << std::endl;
+    
+}
+
+void CamRecorder::listenOnPipe() {
+    #ifdef DEBUG
+    std::cout << "listenOnPipe()\n";
+    #endif
+
+    std::string receivedMessage;
+    std::regex saveRegex("save:(\\d+)");
+
+    while(1) {
+        std::ifstream pipe(PIPE_NAME);
+        if (!pipe) {
+            std::cerr << "Error opening named pipe: " << strerror(errno) << std::endl;
+            exit(1);
+        }
+
+        std::getline(pipe, receivedMessage); // blocking read on pipe
+        std::cout << "Received message on pipe: " << receivedMessage << std::endl;
+
+        std::smatch match;
+        if (receivedMessage == "stop") {
+            stopRecording();
+            break;
+        }
+        else if (std::regex_match(receivedMessage, match, saveRegex)) {
+            int value = std::stoi(match[1].str());
+            std::cout << "Received save command with value: " << value << std::endl;
+            saveRecordings(value);
+        }
+        pipe.close(); // close the pipe after reading
+    }
+
+    #ifdef DEBUG
+    std::cout << "Exiting listenOnPipe()\n";
+    #endif
+}
+
+void CamRecorder::saveRecordings(int seconds_back_to_save) {
+    std::time_t current_time = now();
+    std::time_t threshold_time = current_time - seconds_back_to_save;
+
+    // do this so we don't hit infinite loop of finding currentlyRecordingVideoName
+
+    // if seconds_back_to_save is less than VIDEO_DURATION, then we should save only the current recording
+    // otherwise, we should save everything within threshold_time
+    if(seconds_back_to_save < VIDEO_DURATION) {
+        std::string filename = currentlyRecordingVideoName;
+        std::string baseFilename = filename.substr(filename.find_last_of("/\\") + 1);
+        std::string savePath = recordingSaveDir + baseFilename;
+
+        std::lock_guard<std::mutex> lock(writeMutex);
+        writer.release();
+        writer = setupNewVideoWriter();
+
+        std::filesystem::copy_file(filename, savePath, std::filesystem::copy_options::overwrite_existing);
+        std::cout << "Saved file: " << filename << std::endl;
+        
+        return;
+    } else {
+
+        auto dir_contents = getRecordingDirContents();
+        for (const auto& entry : dir_contents) {
+                std::time_t file_timestamp = time_t_from_direntry(entry);
+
+                if (file_timestamp > threshold_time) {
+                    std::string filename = entry.path().filename().string();
+
+                    if (filename.find(currentlyRecordingVideoName) != std::string::npos) {
+                        std::lock_guard<std::mutex> lock(writeMutex);
+                        writer.release();
+                        writer = setupNewVideoWriter();
+                    }
+
+                    std::string savePath = recordingSaveDir + filename;
+                    std::filesystem::copy_file(entry.path(), savePath, std::filesystem::copy_options::overwrite_existing);
+                    std::cout << "Saved file: " << filename << std::endl;
+                }
+        }
+    }
+}
+
+
+cv::VideoWriter CamRecorder::setupNewVideoWriter() {
+    std::string newVideoName = recordingDir + "output_" + formatted_time() + ".mkv";
+    auto newWriter = VideoWriter(newVideoName, VideoWriter::fourcc('X', '2', '6', '4'), FRAME_RATE, Size(this->width, this->height));
+    currentlyRecordingVideoName = newVideoName;
+    return newWriter;
 }
 
 void CamRecorder::makeRecordingDirs() {
@@ -73,133 +248,6 @@ void CamRecorder::makeRecordingDirs() {
     }
 }
 
-void CamRecorder::removeListeningPipe() {
-    // Add removeListeningPipe code here
-    if (unlink(PIPE_NAME) == -1) {
-        std::cerr << "Error removing named pipe: " << strerror(errno) << std::endl;
-        exit(1);
-    }
-    std::cout << "Named pipe removed" << std::endl;
-    
-}
-
-void CamRecorder::listenOnPipe() {
-    std::string receivedMessage;
-    if (!pipe) {
-        std::cerr << "Error opening named pipe: " << strerror(errno) << std::endl;
-        exit(1);
-    }
-    std::regex saveRegex("save:(\\d+)");
-    while(1) {
-        std::ifstream pipe(PIPE_NAME);
-        std::getline(pipe, receivedMessage);
-        std::cout << "Received message on pipe: " << receivedMessage << std::endl;
-        std::smatch match;
-
-        if (receivedMessage == "stop") {
-            stopRecording();
-            break;
-        }
-        else if (std::regex_match(receivedMessage, match, saveRegex)) {
-            int value = std::stoi(match[1].str());
-            std::cout << "Received save command with value: " << value << std::endl;
-            saveRecordings(value);
-        }
-        pipe.close(); // close the pipe after reading
-    }
-    #ifdef DEBUG
-    std::cout << "Exiting listenOnPipe()\n";
-    #endif
-}
-
-void CamRecorder::recordingLoop() {
-    std::cout << "Recording loop started\n";
-    isRecording = true;
-    recordingThread = std::thread(&CamRecorder::startRecording, this);
-    cleanupThread = std::thread(&CamRecorder::cleanupThreadLoop, this);
-    listenOnPipe();
-}
-
-void CamRecorder::cleanupThreadLoop() {
-
-    #ifdef DEBUG
-    std::cout << "cleanupThreadLoop()\n";
-    #endif
-
-    time_t start_time = now();
-    std::time_t threshold_time = start_time - DELETE_OLDER_THAN;
-    bool first = true;
-    while(isRecording) {
-
-        time_t current_time = now();
-        if (current_time - start_time >= DELETE_OLDER_THAN || first) {
-            first = false;
-            start_time = current_time;
-            auto dir_contents = getRecordingDirContents();
-            for(auto &entry : dir_contents) {
-                auto file_time = std::filesystem::last_write_time(entry);
-                // Convert to system clock time point
-                auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-                    file_time - std::filesystem::file_time_type::clock::now()
-                    + std::chrono::system_clock::now());
-                // Convert to time_t
-                std::time_t file_timestamp = std::chrono::system_clock::to_time_t(sctp);
-
-                if (file_timestamp < threshold_time) {
-                    std::filesystem::remove(entry);
-                    std::cout << "Deleted file: " << entry.path().filename().string() << std::endl;
-                }
-            }
-        }
-
-        std::this_thread::sleep_for(std::chrono::seconds(1));   
-    }
-    #ifdef DEBUG
-    std::cout << "Closing cleanupThreadLoop()\n";
-    #endif
-}
-
-void CamRecorder::startRecording() {
-    #ifdef DEBUG
-    std::cout << "startRecording()\n";
-    #endif
-
-    
-    cv::Mat frame;
-    std::time_t start_time = now();
-    while (isRecording) {
-        cap >> frame;
-        if (frame.empty()) {
-            std::cerr << "Error: Could not capture a frame." << std::endl;
-            break;
-        }
-        
-        {
-            std::lock_guard<std::mutex> lock(writeMutex);
-            writer.write(frame);
-
-            std::time_t current_time = now();
-            if (current_time - start_time >= VIDEO_DURATION) {
-                std::cout << current_time << " Current time. Start time: " << start_time << std::endl;
-                writer.release();
-                writer = setupNewVideoWriter();
-                start_time = current_time;
-            }
-        }
-    }
-
-    #ifdef DEBUG
-    std::cout << "EXITING startRecording(). this->isRecording " << (isRecording ? "true" : "false") << std::endl;
-    #endif
-}
-
-void CamRecorder::stopRecording() {
-    isRecording = false;
-    recordingThread.join();
-    cleanupThread.join();
-    std::cout << "Recording stopped\n";
-}
-
 std::vector<std::filesystem::directory_entry> CamRecorder::getRecordingDirContents() {
     std::vector<std::filesystem::directory_entry> dir_contents;
     for (const auto& entry : std::filesystem::directory_iterator(recordingDir)) {
@@ -208,62 +256,4 @@ std::vector<std::filesystem::directory_entry> CamRecorder::getRecordingDirConten
         }
     }
     return std::move(dir_contents);
-}
-
-void CamRecorder::saveRecordings(int seconds_back_to_save) {
-    // Add save recording code here
-
-    std::string saveDir = recordingSaveDir;
-
-    std::time_t current_time = now();
-    std::time_t threshold_time = current_time - seconds_back_to_save;
-
-    // do this so we don't hit infinite loop of finding currentlyRecordingVideoName
-
-    // if seconds_back_to_save is less than VIDEO_DURATION, then we should save only the current recording
-    // otherwise, we should save everything within threshold_time
-    if(seconds_back_to_save < VIDEO_DURATION) {
-        std::string filename = currentlyRecordingVideoName;
-        std::string baseFilename = filename.substr(filename.find_last_of("/\\") + 1);
-        std::string savePath = saveDir + baseFilename;
-
-        std::lock_guard<std::mutex> lock(writeMutex);
-        writer.release();
-        writer = setupNewVideoWriter();
-
-        std::filesystem::copy_file(filename, savePath, std::filesystem::copy_options::overwrite_existing);
-        std::cout << "Saved file: " << filename << std::endl;
-        
-        return;
-    } else {
-
-        auto dir_contents = getRecordingDirContents();
-        for (const auto& entry : dir_contents) {
-                auto file_time = std::filesystem::last_write_time(entry);
-                // Convert to system clock time point
-                auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-                    file_time - std::filesystem::file_time_type::clock::now()
-                    + std::chrono::system_clock::now());
-                // Convert to time_t
-                std::time_t file_timestamp = std::chrono::system_clock::to_time_t(sctp);
-
-
-                if (file_timestamp > threshold_time) {
-                    std::string filename = entry.path().filename().string();
-
-                    if (filename.find(currentlyRecordingVideoName) != std::string::npos) {
-                        std::lock_guard<std::mutex> lock(writeMutex);
-                        writer.release();
-                        writer = setupNewVideoWriter();
-                    }
-
-                    std::string savePath = saveDir + filename;
-                    std::filesystem::copy_file(entry.path(), savePath, std::filesystem::copy_options::overwrite_existing);
-                    std::cout << "Saved file: " << filename << std::endl;
-                }
-            
-        }
-    }
-
-    
 }

@@ -73,43 +73,43 @@ CMakeFiles/dashcam.dir/src/main.cc.o: CMakeFiles/dashcam.dir/flags.make
 CMakeFiles/dashcam.dir/src/main.cc.o: /home/frank/Code/dashcam/src/main.cc
 CMakeFiles/dashcam.dir/src/main.cc.o: CMakeFiles/dashcam.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/frank/Code/dashcam/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/dashcam.dir/src/main.cc.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/dashcam.dir/src/main.cc.o -MF CMakeFiles/dashcam.dir/src/main.cc.o.d -o CMakeFiles/dashcam.dir/src/main.cc.o -c /home/frank/Code/dashcam/src/main.cc
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/dashcam.dir/src/main.cc.o -MF CMakeFiles/dashcam.dir/src/main.cc.o.d -o CMakeFiles/dashcam.dir/src/main.cc.o -c /home/frank/Code/dashcam/src/main.cc
 
 CMakeFiles/dashcam.dir/src/main.cc.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/dashcam.dir/src/main.cc.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/frank/Code/dashcam/src/main.cc > CMakeFiles/dashcam.dir/src/main.cc.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/frank/Code/dashcam/src/main.cc > CMakeFiles/dashcam.dir/src/main.cc.i
 
 CMakeFiles/dashcam.dir/src/main.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/dashcam.dir/src/main.cc.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/frank/Code/dashcam/src/main.cc -o CMakeFiles/dashcam.dir/src/main.cc.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/frank/Code/dashcam/src/main.cc -o CMakeFiles/dashcam.dir/src/main.cc.s
 
 CMakeFiles/dashcam.dir/src/CamRecorder.cc.o: CMakeFiles/dashcam.dir/flags.make
 CMakeFiles/dashcam.dir/src/CamRecorder.cc.o: /home/frank/Code/dashcam/src/CamRecorder.cc
 CMakeFiles/dashcam.dir/src/CamRecorder.cc.o: CMakeFiles/dashcam.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/frank/Code/dashcam/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/dashcam.dir/src/CamRecorder.cc.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/dashcam.dir/src/CamRecorder.cc.o -MF CMakeFiles/dashcam.dir/src/CamRecorder.cc.o.d -o CMakeFiles/dashcam.dir/src/CamRecorder.cc.o -c /home/frank/Code/dashcam/src/CamRecorder.cc
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/dashcam.dir/src/CamRecorder.cc.o -MF CMakeFiles/dashcam.dir/src/CamRecorder.cc.o.d -o CMakeFiles/dashcam.dir/src/CamRecorder.cc.o -c /home/frank/Code/dashcam/src/CamRecorder.cc
 
 CMakeFiles/dashcam.dir/src/CamRecorder.cc.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/dashcam.dir/src/CamRecorder.cc.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/frank/Code/dashcam/src/CamRecorder.cc > CMakeFiles/dashcam.dir/src/CamRecorder.cc.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/frank/Code/dashcam/src/CamRecorder.cc > CMakeFiles/dashcam.dir/src/CamRecorder.cc.i
 
 CMakeFiles/dashcam.dir/src/CamRecorder.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/dashcam.dir/src/CamRecorder.cc.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/frank/Code/dashcam/src/CamRecorder.cc -o CMakeFiles/dashcam.dir/src/CamRecorder.cc.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/frank/Code/dashcam/src/CamRecorder.cc -o CMakeFiles/dashcam.dir/src/CamRecorder.cc.s
 
 CMakeFiles/dashcam.dir/src/utilities.cc.o: CMakeFiles/dashcam.dir/flags.make
 CMakeFiles/dashcam.dir/src/utilities.cc.o: /home/frank/Code/dashcam/src/utilities.cc
 CMakeFiles/dashcam.dir/src/utilities.cc.o: CMakeFiles/dashcam.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/frank/Code/dashcam/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/dashcam.dir/src/utilities.cc.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/dashcam.dir/src/utilities.cc.o -MF CMakeFiles/dashcam.dir/src/utilities.cc.o.d -o CMakeFiles/dashcam.dir/src/utilities.cc.o -c /home/frank/Code/dashcam/src/utilities.cc
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/dashcam.dir/src/utilities.cc.o -MF CMakeFiles/dashcam.dir/src/utilities.cc.o.d -o CMakeFiles/dashcam.dir/src/utilities.cc.o -c /home/frank/Code/dashcam/src/utilities.cc
 
 CMakeFiles/dashcam.dir/src/utilities.cc.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/dashcam.dir/src/utilities.cc.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/frank/Code/dashcam/src/utilities.cc > CMakeFiles/dashcam.dir/src/utilities.cc.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/frank/Code/dashcam/src/utilities.cc > CMakeFiles/dashcam.dir/src/utilities.cc.i
 
 CMakeFiles/dashcam.dir/src/utilities.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/dashcam.dir/src/utilities.cc.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/frank/Code/dashcam/src/utilities.cc -o CMakeFiles/dashcam.dir/src/utilities.cc.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/frank/Code/dashcam/src/utilities.cc -o CMakeFiles/dashcam.dir/src/utilities.cc.s
 
 # Object files for target dashcam
 dashcam_OBJECTS = \
