@@ -4,8 +4,9 @@
 
 This project is a dashcam application that allows users to record and store video footage while driving. It provides features such as real-time video recording.
 
-# Build Deps
+## Build Deps
 - C++ OpenCV-libs
+- cmake
 
 ## Running
 - Make sure to have cmake and an up to date c++ compiler
