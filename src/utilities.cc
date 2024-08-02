@@ -4,6 +4,19 @@ std::time_t now() {
     return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 }
 
+std::chrono::_V2::steady_clock::time_point now_steady() {
+    return std::chrono::steady_clock::now();
+}
+
+int64_t duration_ms(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end) {
+    if (end < start) {
+        auto temp = start;
+        start = end;
+        end = temp;
+    }
+    return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+}
+
 std::string formatted_time() {
     return format_time("%m-%d-%Y_%H%M%S");
 }

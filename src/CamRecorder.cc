@@ -3,6 +3,8 @@ using namespace cv;
 
 CamRecorder::CamRecorder() {
     isRecording = false;
+    this->recordingDir = RECORDING_DIR;
+    this->recordingSaveDir = RECORDING_SAVE_DIR;
 
     this->cap = VideoCapture(0);
     if (!cap.isOpened()) {
@@ -47,25 +49,33 @@ void CamRecorder::startRecording() {
     #endif
     
     cv::Mat frame;
-    std::time_t start_time = now();
+    auto start_time = now_steady();
     while (isRecording) {
         cap >> frame;
+        auto last_frame_capture_time = std::chrono::steady_clock::now();
         if (frame.empty()) {
             std::cerr << "Error: Could not capture a frame." << std::endl;
             break;
         }
         
-        std::lock_guard<std::mutex> lock(writeMutex);
-        writer.write(frame);
-        // cycle video file every VIDEO_DURATION seconds
-        std::time_t current_time = now();
-        if (current_time - start_time >= VIDEO_DURATION) {
-            std::cout << current_time << " Current time. Start time: " << start_time << std::endl;
-            writer.release();
-            writer = setupNewVideoWriter();
-            start_time = current_time;
+        {
+            std::lock_guard<std::mutex> lock(writeMutex);
+            writer.write(frame);
+            // cycle video file every VIDEO_DURATION seconds
+            auto current_time = now_steady();
+            auto duration = duration_ms(start_time, current_time);
+            if (duration / 1000 >= VIDEO_DURATION) { // ms to s
+                std::cout << "Making new video file. Previous Duration in ms: " << duration << std::endl;
+                writer.release();
+                writer = setupNewVideoWriter();
+                start_time = current_time;
+            }
+            // release lock
         }
-        // release lock
+        auto end = std::chrono::steady_clock::now();
+        auto duration = duration_ms(last_frame_capture_time, end);
+        std::time_t time_to_sleep = std::max(0l, 1000/FRAME_RATE - duration);
+        std::this_thread::sleep_for(std::chrono::milliseconds(time_to_sleep)); 
     }
 
     #ifdef DEBUG
@@ -231,8 +241,7 @@ cv::VideoWriter CamRecorder::setupNewVideoWriter() {
 
 void CamRecorder::makeRecordingDirs() {
     // Add makeRecordingDirs code here
-    this->recordingDir = RECORDING_DIR;
-    this->recordingSaveDir = RECORDING_SAVE_DIR;
+    
 
     if (!std::filesystem::exists(recordingDir)) {
         if (!std::filesystem::create_directory(recordingDir)) {
@@ -255,5 +264,5 @@ std::vector<std::filesystem::directory_entry> CamRecorder::getRecordingDirConten
             dir_contents.push_back(entry);
         }
     }
-    return std::move(dir_contents);
+    return dir_contents;
 }

@@ -9,7 +9,7 @@
 #include <regex>
 #include <mutex>
 #include "utilities.h"
-
+#include <algorithm>
 
 #define FRAME_RATE 10
 
@@ -21,7 +21,7 @@
 #define RECORDING_SAVE_DIR "./recordings/save/"
 #define DELETE_OLDER_THAN 3600 // 1 hour in seconds
 #else
-#define VIDEO_DURATION 600 // 10 mins in seconds
+#define VIDEO_DURATION  1800// 10 mins in seconds
 #define RECORDING_DIR "/home/frank/recordings/"
 #define RECORDING_SAVE_DIR "/home/frank/recordings/save/"
 #define DELETE_OLDER_THAN 3600*24 // 24 hours in seconds
