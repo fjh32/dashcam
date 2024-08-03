@@ -100,12 +100,10 @@ void CamRecorder::cleanupThreadLoop() {
 
     time_t start_time = now();
     std::time_t threshold_time = start_time - DELETE_OLDER_THAN;
-    // bool first = true;
     while(isRecording) {
 
         time_t current_time = now();
         auto diff = current_time - start_time;
-        // std::cout << "Current time: " << current_time << " Start time: " << start_time << " Diff: " << diff << std::endl;
         if (diff > VIDEO_DURATION) {
             deleteOlderFiles(threshold_time);
             start_time = current_time;
