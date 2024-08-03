@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include <iostream>
 #include <opencv2/opencv.hpp>
@@ -19,12 +21,12 @@
 #define VIDEO_DURATION 300 // 10 mins in seconds
 #define RECORDING_DIR "./recordings/"
 #define RECORDING_SAVE_DIR "./recordings/save/"
-#define DELETE_OLDER_THAN 3600 // 1 hour in seconds
+#define DELETE_OLDER_THAN 600 // 1 hour in seconds
 #else
-#define VIDEO_DURATION  1800// 10 mins in seconds
+#define VIDEO_DURATION  1800 // in seconds
 #define RECORDING_DIR "/home/frank/recordings/"
 #define RECORDING_SAVE_DIR "/home/frank/recordings/save/"
-#define DELETE_OLDER_THAN 3600*24 // 24 hours in seconds
+#define DELETE_OLDER_THAN 86400 // 24 hours in seconds
 #endif
 
 class CamRecorder {

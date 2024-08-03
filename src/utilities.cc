@@ -8,6 +8,8 @@ std::chrono::_V2::steady_clock::time_point now_steady() {
     return std::chrono::steady_clock::now();
 }
 
+
+
 int64_t duration_ms(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end) {
     if (end < start) {
         auto temp = start;
@@ -15,6 +17,10 @@ int64_t duration_ms(std::chrono::steady_clock::time_point start, std::chrono::st
         end = temp;
     }
     return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+}
+
+int64_t duration_s(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end) {
+    return duration_ms(start, end) / 1000;
 }
 
 std::string formatted_time() {

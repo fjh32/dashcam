@@ -63,9 +63,10 @@ void CamRecorder::startRecording() {
             writer.write(frame);
             // cycle video file every VIDEO_DURATION seconds
             auto current_time = now_steady();
-            auto duration = duration_ms(start_time, current_time);
-            if (duration / 1000 >= VIDEO_DURATION) { // ms to s
-                std::cout << "Making new video file. Previous Duration in ms: " << duration << std::endl;
+            // auto duration = duration_ms(start_time, current_time);
+            auto dur = duration<std::chrono::seconds>(start_time, current_time);
+            if (dur >= VIDEO_DURATION) { // ms to s
+                std::cout << "Making new video file. Previous Duration in s: " << dur << std::endl;
                 writer.release();
                 writer = setupNewVideoWriter();
                 start_time = current_time;
@@ -73,8 +74,9 @@ void CamRecorder::startRecording() {
             // release lock
         }
         auto end = std::chrono::steady_clock::now();
-        auto duration = duration_ms(last_frame_capture_time, end);
-        std::time_t time_to_sleep = std::max(0l, 1000/FRAME_RATE - duration);
+        // auto duration = duration_ms(last_frame_capture_time, end);
+        auto dur = duration<std::chrono::milliseconds>(last_frame_capture_time, end);
+        std::time_t time_to_sleep = std::max(0l, 1000/FRAME_RATE - dur);
         std::this_thread::sleep_for(std::chrono::milliseconds(time_to_sleep)); 
     }
 
@@ -98,14 +100,16 @@ void CamRecorder::cleanupThreadLoop() {
 
     time_t start_time = now();
     std::time_t threshold_time = start_time - DELETE_OLDER_THAN;
-    bool first = true;
+    // bool first = true;
     while(isRecording) {
 
         time_t current_time = now();
-        if (current_time - start_time >= DELETE_OLDER_THAN || first) {
-            first = false;
-            start_time = current_time;
+        auto diff = current_time - start_time;
+        // std::cout << "Current time: " << current_time << " Start time: " << start_time << " Diff: " << diff << std::endl;
+        if (diff > VIDEO_DURATION) {
             deleteOlderFiles(threshold_time);
+            start_time = current_time;
+            threshold_time = start_time - DELETE_OLDER_THAN;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));   
     }
@@ -116,12 +120,13 @@ void CamRecorder::cleanupThreadLoop() {
 
 void CamRecorder::deleteOlderFiles(std::time_t threshold_time) {
     auto dir_contents = getRecordingDirContents();
+    std::cout << "Deleting files older than " << threshold_time << std::endl;
     for(auto &entry : dir_contents) {
         std::time_t file_timestamp = time_t_from_direntry(entry);
 
         if (file_timestamp < threshold_time) {
             std::filesystem::remove(entry);
-            std::cout << "Deleted file: " << entry.path().filename().string() << std::endl;
+            std::cout << "Cleaned up file: " << entry.path().filename().string() << std::endl;
         }
     }
 }
