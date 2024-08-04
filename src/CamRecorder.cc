@@ -35,7 +35,7 @@ CamRecorder::~CamRecorder() {
 }
 
 void CamRecorder::recordingLoop() {
-    std::cout << "Recording loop started\n";
+    std::cout << "Starting Recording Loop\n";
     isRecording = true;
     recordingThread = std::thread(&CamRecorder::startRecording, this);
     cleanupThread = std::thread(&CamRecorder::cleanupThreadLoop, this);
@@ -66,7 +66,6 @@ void CamRecorder::startRecording() {
             // auto duration = duration_ms(start_time, current_time);
             auto dur = duration<std::chrono::seconds>(start_time, current_time);
             if (dur >= VIDEO_DURATION) { // ms to s
-                std::cout << "Making new video file. Previous Duration in s: " << dur << std::endl;
                 writer.release();
                 writer = setupNewVideoWriter();
                 start_time = current_time;
@@ -118,7 +117,6 @@ void CamRecorder::cleanupThreadLoop() {
 
 void CamRecorder::deleteOlderFiles(std::time_t threshold_time) {
     auto dir_contents = getRecordingDirContents();
-    std::cout << "Deleting files older than " << threshold_time << std::endl;
     for(auto &entry : dir_contents) {
         std::time_t file_timestamp = time_t_from_direntry(entry);
 
@@ -236,10 +234,9 @@ void CamRecorder::saveRecordings(int seconds_back_to_save) {
 
 
 cv::VideoWriter CamRecorder::setupNewVideoWriter() {
-    std::string newVideoName = recordingDir + "output_" + formatted_time() + ".mkv";
-    auto newWriter = VideoWriter(newVideoName, VideoWriter::fourcc('X', '2', '6', '4'), FRAME_RATE, Size(this->width, this->height));
-    currentlyRecordingVideoName = newVideoName;
-    return newWriter;
+    currentlyRecordingVideoName = recordingDir + "output_" + formatted_time() + ".mkv";
+    std::cout << "New video file: " << currentlyRecordingVideoName << std::endl;
+    return VideoWriter(currentlyRecordingVideoName, VideoWriter::fourcc('X', '2', '6', '4'), FRAME_RATE, Size(this->width, this->height));
 }
 
 void CamRecorder::makeRecordingDirs() {

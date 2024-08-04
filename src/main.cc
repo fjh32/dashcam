@@ -10,7 +10,6 @@ void catch_sigint(int signum);
 
 int main() {
     camRecorder = make_unique<CamRecorder>();
-    cout << "Starting recording..." << endl;
     signal(SIGINT, catch_sigint);
     
     camRecorder->recordingLoop();

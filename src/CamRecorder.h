@@ -24,8 +24,8 @@
 #define DELETE_OLDER_THAN 600 // 1 hour in seconds
 #else
 #define VIDEO_DURATION  1800 // in seconds
-#define RECORDING_DIR "/home/frank/recordings/"
-#define RECORDING_SAVE_DIR "/home/frank/recordings/save/"
+#define RECORDING_DIR "/home/recordings/"
+#define RECORDING_SAVE_DIR "/home/recordings/save/"
 #define DELETE_OLDER_THAN 86400 // 24 hours in seconds
 #endif
 
