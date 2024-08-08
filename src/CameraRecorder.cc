@@ -165,9 +165,13 @@ void CameraRecorder::setupGstElements(int argc, char* argv[]) {
     gstData = std::make_unique<GstData>();
 
     gstData->pipeline = gst_pipeline_new("recording_pipeline");
-
+    #ifndef RPI_MODE
     gstData->source = gst_element_factory_make("v4l2src", "source");
-    g_object_set(gstData->source, "device", "/dev/video0", NULL);
+    #else
+    std::cout << "rpi libcamera src mode\n";
+    gstData->source = gst_element_factory_make("libcamerasrc", "source");
+    #endif
+    //g_object_set(gstData->source, "device", "/dev/video0", NULL);
     gstData->queue = gst_element_factory_make("queue", "queue_thread");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");

@@ -32,3 +32,15 @@ This project is a dashcam application that allows users to record and store vide
 
 Contributions are welcome! Please follow the guidelines in the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
 
+
+## RPI CAM
+`./build.sh -d -rpi`
+### RPI deps
+`sudo apt-get install libraspberrypi-dev`
+```
+git clone https://github.com/thaytan/gst-rpicamsrc
+cd gst-rpicamsrc
+./autogen.sh --prefix=/usr --libdir=/usr/lib/arm-linux-gnueabihf/
+make
+sudo make install
+```
