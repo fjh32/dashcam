@@ -123,7 +123,7 @@ void CameraRecorder::stopPipeline() {
         if (ret == GST_STATE_CHANGE_FAILURE) {
             g_printerr("Failed to set pipeline to PAUSED state.\n");
             gst_object_unref(gstData->pipeline);
-            return -1;
+            return;
         }
     }
 
@@ -133,7 +133,7 @@ void CameraRecorder::stopPipeline() {
         if (ret == GST_STATE_CHANGE_FAILURE) {
             g_printerr("Failed to set pipeline to READY state.\n");
             gst_object_unref(gstData->pipeline);
-            return -1;
+            return;
         }
     }
 
@@ -143,7 +143,7 @@ void CameraRecorder::stopPipeline() {
         if (ret == GST_STATE_CHANGE_FAILURE) {
             g_printerr("Failed to set pipeline to NULL state.\n");
             gst_object_unref(gstData->pipeline);
-            return -1;
+            return;
         }
     }
 
