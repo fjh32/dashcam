@@ -63,7 +63,6 @@ void CamRecorder::startRecording() {
             writer.write(frame);
             // cycle video file every VIDEO_DURATION seconds
             auto current_time = now_steady();
-            // auto duration = duration_ms(start_time, current_time);
             auto dur = duration<std::chrono::seconds>(start_time, current_time);
             if (dur >= VIDEO_DURATION) { // ms to s
                 writer.release();
@@ -73,7 +72,6 @@ void CamRecorder::startRecording() {
             // release lock
         }
         auto end = std::chrono::steady_clock::now();
-        // auto duration = duration_ms(last_frame_capture_time, end);
         auto dur = duration<std::chrono::milliseconds>(last_frame_capture_time, end);
         std::time_t time_to_sleep = std::max(0l, 1000/FRAME_RATE - dur);
         std::this_thread::sleep_for(std::chrono::milliseconds(time_to_sleep)); 
@@ -192,11 +190,9 @@ void CamRecorder::saveRecordings(int seconds_back_to_save) {
     std::time_t current_time = now();
     std::time_t threshold_time = current_time - seconds_back_to_save;
 
-    // do this so we don't hit infinite loop of finding currentlyRecordingVideoName
-
     // if seconds_back_to_save is less than VIDEO_DURATION, then we should save only the current recording
     // otherwise, we should save everything within threshold_time
-    if(seconds_back_to_save < VIDEO_DURATION) {
+    if(seconds_back_to_save <= VIDEO_DURATION) {
         std::string filename = currentlyRecordingVideoName;
         std::string baseFilename = filename.substr(filename.find_last_of("/\\") + 1);
         std::string savePath = recordingSaveDir + baseFilename;

@@ -1,0 +1,278 @@
+#include "CameraRecorder.h"
+
+///////////////////////////////////////////////////////////////////////
+using namespace cv;
+
+GstData::GstData() {}
+// GstData::GstData() {
+
+//     pipeline = gst_pipeline_new("recording_pipeline");
+
+//     source = gst_element_factory_make("v4l2src", "source");
+//     queue = gst_element_factory_make("queue", "queue_thread");
+//     capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
+//     videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
+//     encoder = gst_element_factory_make("x264enc", "encoder");
+//     muxer = gst_element_factory_make("matroskamux", "mux");
+//     sink = gst_element_factory_make("filesink", "sink");
+//     bus = nullptr;
+
+//     if ( !pipeline || !source || !queue || !capsfilter || !videoconvert ||!encoder || !encoder || !muxer || !sink) {
+//         std::cerr << "Error: Could not create gstreamer elements." << std::endl;
+//         std::cerr << "Ensure you called gst_init() before creating elements." << std::endl;
+//         exit(1);
+//     }
+
+//     // $ v4l2-ctl --list-formats-ext // checks available formats for webcam
+//     GstCaps *caps = gst_caps_new_simple(
+//         "video/x-raw",
+//         "format", G_TYPE_STRING, "YUY2",
+//         "width", G_TYPE_INT, 640,
+//         "height", G_TYPE_INT, 480,
+//         "framerate", GST_TYPE_FRACTION, 30, 1,
+//         nullptr);
+//     g_object_set(capsfilter, "caps", caps, nullptr);
+//     gst_caps_unref(caps);
+// }
+
+GstData::~GstData() {
+    // Add destructor code here
+    std::cout << "Destructor called for GstData" << std::endl;
+    // if(bus) {
+    //     gst_object_unref (bus);
+    // }
+    // gst_element_set_state(pipeline, GST_STATE_NULL);
+    // gst_object_unref(pipeline);
+}
+
+///////////////////////////////////////////////////////////////////////
+
+CameraRecorder::CameraRecorder(int argc, char* argv[]) {
+    isRecording = true;
+    recordingDir = RECORDING_DIR;
+
+    // gst_init(&argc, &argv);
+    setupGstElements(argc, argv);
+    std::cout << "Gstreamer initialized" << std::endl;
+    // gstData = std::make_unique<GstData>();
+
+    // // GstCaps *caps = gst_caps_new_simple(
+    // //     "video/x-raw",
+    // //     "format", G_TYPE_STRING, "YUY2",
+    // //     "width", G_TYPE_INT, 640,
+    // //     "height", G_TYPE_INT, 480,
+    // //     "framerate", GST_TYPE_FRACTION, 30, 1,
+    // //     nullptr);
+    // // g_object_set(gstData->capsfilter, "caps", caps, nullptr);
+    // // gst_caps_unref(caps);
+
+    // //create video source
+    // g_object_set(G_OBJECT(gstData->source), "device", "/dev/video0", NULL);
+    // currentlyRecordingVideoName = makeNewFilename();
+    // // create video sink
+    // g_object_set(G_OBJECT(gstData->sink), "location", currentlyRecordingVideoName.c_str(), NULL);
+    // // build pipeline
+    // gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder, gstData->muxer, gstData->sink, NULL);
+    // // if(!gst_element_link_many(gstData->source, gstData->queue, gstData->capsfilter, gstData->encoder, gstData->muxer, gstData->sink, NULL)) {
+    // //     std::cerr << "Error: Could not link gstreamer elements." << std::endl;
+    // //     exit(1);
+    // // }
+
+    // if (!gst_element_link(gstData->source, gstData->queue)) {
+    //     std::cerr << "Error: Could not link source to queue." << std::endl;
+    //     exit(1);
+    // }
+    // if (!gst_element_link(gstData->queue, gstData->capsfilter)) {
+    //     std::cerr << "Error: Could not link queue to capsfilter." << std::endl;
+    //     exit(1);
+    // }
+    // if (!gst_element_link(gstData->capsfilter, gstData->videoconvert)) {
+    //     std::cerr << "Error: Could not link capsfilter to videoconvert." << std::endl;
+    //     exit(1);
+    // }
+    // if (!gst_element_link(gstData->videoconvert, gstData->encoder)) {
+    //     std::cerr << "Error: Could not link videoconvert to encoder." << std::endl;
+    //     exit(1);
+    // }
+    // if (!gst_element_link(gstData->encoder, gstData->muxer)) {
+    //     std::cerr << "Error: Could not link encoder to muxer." << std::endl;
+    //     exit(1);
+    // }
+    // if (!gst_element_link(gstData->muxer, gstData->sink)) {
+    //     std::cerr << "Error: Could not link muxer to sink." << std::endl;
+    //     exit(1);
+    // }
+
+
+    // gstData->bus = gst_element_get_bus(gstData->pipeline);
+}
+
+CameraRecorder::~CameraRecorder() {
+    // Add destructor code here
+    std::cout << "Destructor called for Camera Recorder" << std::endl;
+    stopRecording();
+}
+
+void CameraRecorder::recordingLoop() {
+
+}
+void CameraRecorder::setupGstElements(int argc, char* argv[]) {
+    // Add code here
+    gst_init(&argc, &argv);
+
+    gstData = std::make_unique<GstData>();
+
+    gstData->pipeline = gst_pipeline_new("recording_pipeline");
+
+    gstData->source = gst_element_factory_make("v4l2src", "source");
+    gstData->queue = gst_element_factory_make("queue", "queue_thread");
+    gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
+    gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
+    gstData->encoder = gst_element_factory_make("x264enc", "encoder");
+    gstData->muxer = gst_element_factory_make("matroskamux", "mux");
+    gstData->sink = gst_element_factory_make("filesink", "sink");
+
+    if ( !gstData->pipeline || !gstData->source || !gstData->queue || !gstData->capsfilter || !gstData->videoconvert ||!gstData->encoder  || !gstData->muxer || !gstData->sink) {
+        std::cerr << "Error: Could not create gstreamer elements." << std::endl;
+        exit(1);
+    }
+
+    // $ v4l2-ctl --list-formats-ext // checks available formats for webcam
+    GstCaps *caps = gst_caps_new_simple(
+        "video/x-raw",
+        "format", G_TYPE_STRING, "YUY2",
+        "width", G_TYPE_INT, 640,
+        "height", G_TYPE_INT, 480,
+        "framerate", GST_TYPE_FRACTION, 30, 1,
+        nullptr);
+    g_object_set(gstData->capsfilter, "caps", caps, nullptr);
+    gst_caps_unref(caps);
+
+    // gstData->bus = gst_element_get_bus(gstData->pipeline);
+    currentlyRecordingVideoName = makeNewFilename();
+
+    g_object_set(gstData->sink, "location", currentlyRecordingVideoName.c_str(), NULL);
+
+    gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder, gstData->muxer, gstData->sink, NULL);
+    if(!gst_element_link_many(gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder, gstData->muxer, gstData->sink, NULL)) {
+        std::cerr << "Error: Could not link gstreamer elements." << std::endl;
+        exit(1);
+    }
+}
+
+void CameraRecorder::startRecording() {
+    #ifdef DEBUG
+    std::cout << "startRecording()\n";
+    #endif
+    
+
+    // Add code here
+    if (gst_element_set_state(gstData->pipeline, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE) {
+        g_printerr("Unable to set the pipeline to the playing state.\n");
+        return;
+    }
+
+    auto start_time = now_steady();
+    while(isRecording) {
+        auto msg = gst_bus_timed_pop_filtered (gstData->bus, 100 * GST_MSECOND, static_cast<GstMessageType>(GST_MESSAGE_STATE_CHANGED | GST_MESSAGE_ERROR | GST_MESSAGE_EOS | GST_MESSAGE_DURATION));
+
+        if (msg != nullptr) {
+            handleBusMessage(msg);
+        }
+        else {
+            auto current_time = now_steady();
+            auto dur = duration<std::chrono::seconds>(start_time, current_time);
+            if(dur >= VIDEO_DURATION) {
+                switchFileSink();
+                start_time = current_time;
+            }
+        }
+    }
+
+    #ifdef DEBUG
+    std::cout << "EXITING startRecording(). this->isRecording " << (isRecording ? "true" : "false") << std::endl;
+    #endif
+}
+
+void CameraRecorder::handleBusMessage(GstMessage *msg) {
+    // Add code here
+    switch (GST_MESSAGE_TYPE(msg)) {
+        case GST_MESSAGE_ERROR: {
+            GError *err;
+            gchar *debug_info;
+            gst_message_parse_error(msg, &err, &debug_info);
+            g_printerr("Error received from element %s: %s\n", GST_OBJECT_NAME(msg->src), err->message);
+            g_printerr("Debugging information: %s\n", debug_info ? debug_info : "none");
+            g_clear_error(&err);
+            g_free(debug_info);
+            gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+            break;
+        }
+        case GST_MESSAGE_EOS:
+            g_print("End-Of-Stream reached.\n");
+            // switchFileSink();
+            gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+            break;
+        case GST_MESSAGE_DURATION:
+            break;
+        default:
+            break;
+    }
+}
+
+void CameraRecorder::switchFileSink() {
+    
+}
+
+// void CameraRecorder::switchFileSink()
+// {
+//     gst_element_set_state(gstData->pipeline, GST_STATE_PAUSED);
+//     gst_element_unlink(gstData->muxer, gstData->sink);
+//     gst_element_send_event(gstData->sink, gst_event_new_eos());
+//     // while (true) {
+//     //     GstMessage *msg = gst_bus_timed_pop_filtered(gstData->bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_EOS);
+//     //     if (msg != nullptr) {
+//     //         if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_EOS) {
+//     //             gst_message_unref(msg);
+//     //             break;
+//     //         }
+//     //         gst_message_unref(msg);
+//     //     }
+//     // }
+//     currentlyRecordingVideoName = makeNewFilename();
+//     std::cout << "Switching file sink. New video file: " << currentlyRecordingVideoName << std::endl;
+//     GstElement *new_sink = gst_element_factory_make("filesink", "sink");
+//     g_object_set(G_OBJECT(new_sink), "location", currentlyRecordingVideoName.c_str(), NULL);
+//     gst_bin_add(GST_BIN(gstData->pipeline), new_sink);
+//     gst_element_link(gstData->muxer, new_sink);
+//     gst_element_sync_state_with_parent(new_sink);
+//     gst_element_set_state(gstData->pipeline, GST_STATE_PLAYING);
+//     gst_object_unref(gstData->sink);
+//     gstData->sink = new_sink;
+// }
+
+void CameraRecorder::stopRecording() {
+    // Add code here
+    std::cout << "Stopping recording" << std::endl;
+    isRecording = false;
+    // gst_element_send_event(gstData->pipeline, gst_event_new_eos());
+    gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    // while (true) {
+    //     GstMessage *msg = gst_bus_timed_pop_filtered(gstData->bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_EOS);
+    //     if (msg != nullptr) {
+    //         if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_EOS) {
+    //             gst_message_unref(msg);
+    //             break;
+    //         }
+    //         gst_message_unref(msg);
+    //     }
+    // }
+    // gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+}
+
+std::string CameraRecorder::makeNewFilename() {
+    // Add code here    
+    return recordingDir + "output_" + formatted_time() + ".mkv";
+
+}
+///////////////////////////////////////////////////////////////////////
