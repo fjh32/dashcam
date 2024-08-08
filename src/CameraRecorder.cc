@@ -116,6 +116,9 @@ void CameraRecorder::stopPipeline() {
     
     gst_element_send_event(gstData->pipeline, gst_event_new_eos());
     pipelineThread.join();
+    #ifdef RPI_MODE
+    gst_element_set_state(gstData->pipeline, GST_STATE_PAUSED);
+    #endif
     gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
     
     std::cout << "stopPipeline(): Recording stopped" << std::endl;
