@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     gst_init(&argc, &argv);
 
     // Create the elements
-    source = gst_element_factory_make("rpicamsrc", "source");
+    source = gst_element_factory_make("libcamerasrc", "source");
     convert = gst_element_factory_make("videoconvert", "convert");
     encoder = gst_element_factory_make("x264enc", "encoder");
     mux = gst_element_factory_make("mp4mux", "mux");
