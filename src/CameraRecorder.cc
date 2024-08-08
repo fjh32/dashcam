@@ -58,7 +58,7 @@ void CameraRecorder::startRecording() {
     
     isRecording = true;
     pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
-    // std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     while(isRecording) {
         auto current_time = now_steady();
         auto dur = duration<std::chrono::seconds>(currentVideoStartTime, current_time);
