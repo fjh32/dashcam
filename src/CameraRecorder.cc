@@ -76,6 +76,7 @@ void CameraRecorder::startPipeline() {
 
     currentlyRecordingVideoName = makeNewFilename();
     g_object_set(gstData->sink, "location", currentlyRecordingVideoName.c_str(), NULL);
+    std::cout << "Recording to file: " << currentlyRecordingVideoName << std::endl;
     gst_element_set_state(gstData->pipeline, GST_STATE_PLAYING);
 
     currentVideoStartTime = now_steady();
@@ -155,40 +156,6 @@ void CameraRecorder::saveRecordings(int seconds_back_to_save) {
     }
 }
 
-void CameraRecorder::cleanupThreadLoop() {
-    #ifdef DEBUG
-    std::cout << "cleanupThreadLoop()\n";
-    #endif
-
-    time_t start_time = now();
-    std::time_t threshold_time = start_time - DELETE_OLDER_THAN;
-    while(isRecording) {
-
-        time_t current_time = now();
-        auto diff = current_time - start_time;
-        if (diff > VIDEO_DURATION) {
-            deleteOlderFiles(threshold_time);
-            start_time = current_time;
-            threshold_time = start_time - DELETE_OLDER_THAN;
-        }
-        std::this_thread::sleep_for(std::chrono::seconds(1));   
-    }
-    #ifdef DEBUG
-    std::cout << "Closing cleanupThreadLoop()\n";
-    #endif
-}
-
-void CameraRecorder::deleteOlderFiles(std::time_t threshold_time) {
-    auto dir_contents = getRecordingDirContents();
-    for(auto &entry : dir_contents) {
-        std::time_t file_timestamp = time_t_from_direntry(entry);
-
-        if (file_timestamp < threshold_time) {
-            std::filesystem::remove(entry);
-            std::cout << "Cleaned up file: " << entry.path().filename().string() << std::endl;
-        }
-    }
-}
 
 
 void CameraRecorder::setupGstElements(int argc, char* argv[]) {
@@ -317,6 +284,40 @@ void CameraRecorder::listenOnPipe() {
     #endif
 }
 
+void CameraRecorder::cleanupThreadLoop() {
+    #ifdef DEBUG
+    std::cout << "cleanupThreadLoop()\n";
+    #endif
+
+    time_t start_time = now();
+    std::time_t threshold_time = start_time - DELETE_OLDER_THAN;
+    while(isRecording) {
+
+        time_t current_time = now();
+        auto diff = current_time - start_time;
+        if (diff > VIDEO_DURATION) {
+            deleteOlderFiles(threshold_time);
+            start_time = current_time;
+            threshold_time = start_time - DELETE_OLDER_THAN;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));   
+    }
+    #ifdef DEBUG
+    std::cout << "Closing cleanupThreadLoop()\n";
+    #endif
+}
+
+void CameraRecorder::deleteOlderFiles(std::time_t threshold_time) {
+    auto dir_contents = getRecordingDirContents();
+    for(auto &entry : dir_contents) {
+        std::time_t file_timestamp = time_t_from_direntry(entry);
+
+        if (file_timestamp < threshold_time) {
+            std::filesystem::remove(entry);
+            std::cout << "Cleaned up file: " << entry.path().filename().string() << std::endl;
+        }
+    }
+}
 
 std::string CameraRecorder::makeNewFilename() {
     return recordingDir + "output_" + formatted_time() + ".mkv";

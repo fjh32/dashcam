@@ -1,0 +1,4 @@
+Named pipe created at /tmp/camrecorder.pipe
+Gstreamer initialized
+Starting Recording Loop
+Recording to file: /home/recordings/output_08-07-2024_210647.mkv
