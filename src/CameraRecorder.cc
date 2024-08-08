@@ -58,7 +58,7 @@ void CameraRecorder::startRecording() {
     
     isRecording = true;
     pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    // std::this_thread::sleep_for(std::chrono::seconds(1));
     while(isRecording) {
         auto current_time = now_steady();
         auto dur = duration<std::chrono::seconds>(currentVideoStartTime, current_time);
@@ -110,7 +110,17 @@ void CameraRecorder::stopPipeline() {
     
 
     gst_element_send_event(gstData->pipeline, gst_event_new_eos());
-    pipelineThread.join();    
+    pipelineThread.join(); 
+    std::cout << "stopPipeline(): Pipeline thread joined" << std::endl;
+    GstBus *bus;
+    GstMessage *msg;
+
+    bus = gst_element_get_bus(gstData->pipeline);
+    while ((msg = gst_bus_pop(bus))) {
+        std::cout << "message cleared from bus\n";
+        gst_message_unref(msg);
+    }
+    gst_object_unref(bus);   
     gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
     pipelineRunning = false;
     
