@@ -120,8 +120,9 @@ int main(int argc, char *argv[]) {
     // Set the pipeline state to NULL before reconfiguring
     std::cout<<"Setting pipeline state to NULL\n";
     gst_element_set_state(pipeline, GST_STATE_NULL);
-    auto bus = gst_element_get_bus(pipeline);
+    GstBus *bus;
     GstMessage *msg;
+    bus = gst_element_get_bus(pipeline);
     while ((msg = gst_bus_pop(bus))) {
         gst_message_unref(msg);
     }
@@ -132,8 +133,7 @@ int main(int argc, char *argv[]) {
 
     // Clean up
     gst_element_set_state(pipeline, GST_STATE_NULL);
-    auto bus = gst_element_get_bus(pipeline);
-    GstMessage *msg;
+    bus = gst_element_get_bus(pipeline);
     while ((msg = gst_bus_pop(bus))) {
         gst_message_unref(msg);
     }
