@@ -116,43 +116,43 @@ void CameraRecorder::stopPipeline() {
     
     gst_element_send_event(gstData->pipeline, gst_event_new_eos());
     pipelineThread.join();
-    
-    #ifdef RPI_MODE
-    GstStateChangeReturn ret;
-    if (gstData->pipeline != NULL) {
-        ret = gst_element_set_state(gstData->pipeline, GST_STATE_PAUSED);
-        if (ret == GST_STATE_CHANGE_FAILURE) {
-            g_printerr("Failed to set pipeline to PAUSED state.\n");
-            gst_object_unref(gstData->pipeline);
-            return;
-        }
-    }
 
-    // Set the pipeline to READY state
-    if (gstData->pipeline != NULL) {
-        ret = gst_element_set_state(gstData->pipeline, GST_STATE_READY);
-        if (ret == GST_STATE_CHANGE_FAILURE) {
-            g_printerr("Failed to set pipeline to READY state.\n");
-            gst_object_unref(gstData->pipeline);
-            return;
-        }
-    }
+    // #ifdef RPI_MODE
+    // GstStateChangeReturn ret;
+    // if (gstData->pipeline != NULL) {
+    //     ret = gst_element_set_state(gstData->pipeline, GST_STATE_PAUSED);
+    //     if (ret == GST_STATE_CHANGE_FAILURE) {
+    //         g_printerr("Failed to set pipeline to PAUSED state.\n");
+    //         gst_object_unref(gstData->pipeline);
+    //         return;
+    //     }
+    // }
 
-    // Finally, set the pipeline to NULL state
-    if (gstData->pipeline != NULL) {
-        ret = gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
-        if (ret == GST_STATE_CHANGE_FAILURE) {
-            g_printerr("Failed to set pipeline to NULL state.\n");
-            gst_object_unref(gstData->pipeline);
-            return;
-        }
-    }
+    // // Set the pipeline to READY state
+    // if (gstData->pipeline != NULL) {
+    //     ret = gst_element_set_state(gstData->pipeline, GST_STATE_READY);
+    //     if (ret == GST_STATE_CHANGE_FAILURE) {
+    //         g_printerr("Failed to set pipeline to READY state.\n");
+    //         gst_object_unref(gstData->pipeline);
+    //         return;
+    //     }
+    // }
 
-    // Cleanup
-    if (gstData->pipeline != NULL) {
-        gst_object_unref(gstData->pipeline);
-    }
-    #endif
+    // // Finally, set the pipeline to NULL state
+    // if (gstData->pipeline != NULL) {
+    //     ret = gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    //     if (ret == GST_STATE_CHANGE_FAILURE) {
+    //         g_printerr("Failed to set pipeline to NULL state.\n");
+    //         gst_object_unref(gstData->pipeline);
+    //         return;
+    //     }
+    // }
+
+    // // Cleanup
+    // if (gstData->pipeline != NULL) {
+    //     gst_object_unref(gstData->pipeline);
+    // }
+    // #endif
     gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
     
     std::cout << "stopPipeline(): Recording stopped" << std::endl;
