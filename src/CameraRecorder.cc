@@ -85,14 +85,18 @@ void CameraRecorder::startPipeline() {
         GstMessage *msg = gst_bus_timed_pop_filtered(gstData->bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
         if (msg != nullptr) {
             if(handleBusMessage(msg)) {
+                std::cout << "0 no segfault here" << std::endl;
                 gst_message_unref(msg);
                 break;
             }
         }
         gst_message_unref(msg);
     }
+    std::cout << "1 no segfault here" << std::endl;
+
     
     gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    std::cout << "2 no segfault here" << std::endl;
     gst_object_unref(gstData->bus);
     #ifdef DEBUG
     std::cout << "EXITING startPipeline()." << std::endl;
@@ -109,6 +113,33 @@ void CameraRecorder::stopPipeline() {
     std::cout << "stopPipeline(): Recording stopped" << std::endl;
 }
 
+bool CameraRecorder::handleBusMessage(GstMessage *msg) {
+    // Add code here
+    bool eosSwitch = false;
+    switch (GST_MESSAGE_TYPE(msg)) {
+        case GST_MESSAGE_ERROR: {
+            GError *err;
+            gchar *debug_info;
+            gst_message_parse_error(msg, &err, &debug_info);
+            g_printerr("Error received from element %s: %s\n", GST_OBJECT_NAME(msg->src), err->message);
+            g_printerr("Debugging information: %s\n", debug_info ? debug_info : "none");
+            g_clear_error(&err);
+            g_free(debug_info);
+            gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+            eosSwitch = true;
+            break;
+        }
+        case GST_MESSAGE_EOS:
+            g_print("End-Of-Stream reached.\n");
+            eosSwitch = true;
+            break;
+        default:
+            break;
+    }
+    // gst_message_unref(msg);
+    return eosSwitch;
+}
+
 void CameraRecorder::kill() {
     std::cout<< "starting kill(): Killing entire thing" << std::endl;
     stopPipeline();
@@ -120,7 +151,6 @@ void CameraRecorder::kill() {
 
     std::cout << "ending kill(): Recording loop killed" << std::endl;
 }
-
 
 void CameraRecorder::saveRecordings(int seconds_back_to_save) {
     auto current_time = now();
@@ -213,32 +243,7 @@ void CameraRecorder::setupGstElements(int argc, char* argv[]) {
     }
 }
 
-bool CameraRecorder::handleBusMessage(GstMessage *msg) {
-    // Add code here
-    bool eosSwitch = false;
-    switch (GST_MESSAGE_TYPE(msg)) {
-        case GST_MESSAGE_ERROR: {
-            GError *err;
-            gchar *debug_info;
-            gst_message_parse_error(msg, &err, &debug_info);
-            g_printerr("Error received from element %s: %s\n", GST_OBJECT_NAME(msg->src), err->message);
-            g_printerr("Debugging information: %s\n", debug_info ? debug_info : "none");
-            g_clear_error(&err);
-            g_free(debug_info);
-            gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
-            eosSwitch = true;
-            break;
-        }
-        case GST_MESSAGE_EOS:
-            g_print("End-Of-Stream reached.\n");
-            eosSwitch = true;
-            break;
-        default:
-            break;
-    }
-    // gst_message_unref(msg);
-    return eosSwitch;
-}
+
 
 void CameraRecorder::createListeningPipe() {
     // Add createListeningPipe code here
