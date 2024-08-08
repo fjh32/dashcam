@@ -94,15 +94,15 @@ void CameraRecorder::startPipeline() {
     }
     std::cout << "1 no segfault here" << std::endl;
 
-    if(gstData->pipeline) {
-        std::cout << "ZZ no segfault here" << std::endl;
-        auto ret = gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
-        if (ret == GST_STATE_CHANGE_FAILURE) {
-            g_printerr("Failed to set pipeline to NULL state.\n");
-            gst_object_unref(gstData->pipeline);
-            return;
-        }
-    }
+    // if(gstData->pipeline) {
+    //     std::cout << "ZZ no segfault here" << std::endl;
+    //     auto ret = gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    //     if (ret == GST_STATE_CHANGE_FAILURE) {
+    //         g_printerr("Failed to set pipeline to NULL state.\n");
+    //         gst_object_unref(gstData->pipeline);
+    //         return;
+    //     }
+    // }
     std::cout << "2 no segfault here" << std::endl;
     gst_object_unref(gstData->bus);
     #ifdef DEBUG
@@ -116,6 +116,7 @@ void CameraRecorder::stopPipeline() {
     
     gst_element_send_event(gstData->pipeline, gst_event_new_eos());
     pipelineThread.join();
+    gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
     
     std::cout << "stopPipeline(): Recording stopped" << std::endl;
 }
