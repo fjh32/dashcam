@@ -85,7 +85,7 @@ void CameraRecorder::startPipeline() {
         GstMessage *msg = gst_bus_timed_pop_filtered(gstData->bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
         if (msg != nullptr) {
             if(handleBusMessage(msg)) {
-                
+                gst_message_unref(msg);
                 break;
             }
         }
@@ -165,16 +165,19 @@ void CameraRecorder::setupGstElements(int argc, char* argv[]) {
     gstData = std::make_unique<GstData>();
 
     gstData->pipeline = gst_pipeline_new("recording_pipeline");
+
     #ifndef RPI_MODE
     gstData->source = gst_element_factory_make("v4l2src", "source");
     #else
     std::cout << "rpi libcamera src mode\n";
     gstData->source = gst_element_factory_make("libcamerasrc", "source");
     #endif
+
     //g_object_set(gstData->source, "device", "/dev/video0", NULL);
     gstData->queue = gst_element_factory_make("queue", "queue_thread");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
+
     #ifdef RPI_MODE
     gstData->encoder = gst_element_factory_make("x264enc", "encoder");
     std::cout << "Using omxh264enc for RPI_MODE" << std::endl;
@@ -182,6 +185,8 @@ void CameraRecorder::setupGstElements(int argc, char* argv[]) {
     gstData->encoder = gst_element_factory_make("x264enc", "encoder");
     std::cout << "Using x264enc. NOT RPI_MODE" << std::endl;
     #endif
+
+
     gstData->muxer = gst_element_factory_make("matroskamux", "mux");
     gstData->sink = gst_element_factory_make("filesink", "sink");
 
@@ -231,7 +236,7 @@ bool CameraRecorder::handleBusMessage(GstMessage *msg) {
         default:
             break;
     }
-    gst_message_unref(msg);
+    // gst_message_unref(msg);
     return eosSwitch;
 }
 
