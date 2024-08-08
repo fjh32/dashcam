@@ -94,8 +94,10 @@ void CameraRecorder::startPipeline() {
     }
     std::cout << "1 no segfault here" << std::endl;
 
-    
-    gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    if(gstData->pipeline) {
+        std::cout << "ZZ no segfault here" << std::endl;
+        gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    }
     std::cout << "2 no segfault here" << std::endl;
     gst_object_unref(gstData->bus);
     #ifdef DEBUG
