@@ -116,6 +116,7 @@ void CameraRecorder::stopPipeline() {
     
     gst_element_send_event(gstData->pipeline, gst_event_new_eos());
     pipelineThread.join();
+    
     #ifdef RPI_MODE
     GstStateChangeReturn ret;
     if (gstData->pipeline != NULL) {
