@@ -40,31 +40,35 @@ CameraRecorder::~CameraRecorder() {
 void CameraRecorder::mainLoop() {
     recordingThread = std::thread(&CameraRecorder::startRecording, this);
     cleanupThread = std::thread(&CameraRecorder::cleanupThreadLoop, this);
-    listenOnPipe();
+    // listenOnPipe();
+    while(true)
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 }
 
 void CameraRecorder::startRecording() {
     std::cout << "Starting Recording Loop\n";
 
-    //  Test out start/stop
-    pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-    stopPipeline();
-    /////////////////////
-    
-    // isRecording = true;
+    // //  Test out start/stop
     // pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
-    // std::this_thread::sleep_for(std::chrono::seconds(1));
-    // while(isRecording) {
-    //     auto current_time = now_steady();
-    //     auto dur = duration<std::chrono::seconds>(currentVideoStartTime, current_time);
-    //     if(dur >= VIDEO_DURATION) {
-    //         std::lock_guard<std::mutex> lock(recordingSwapMutex);
-    //         stopPipeline();
-    //         pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
-    //     }
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(250));
-    // }
+    // std::this_thread::sleep_for(std::chrono::seconds(5));
+    // stopPipeline();
+    // /////////////////////
+    
+    isRecording = true;
+    pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    while(isRecording) {
+        auto current_time = now_steady();
+        auto dur = duration<std::chrono::seconds>(currentVideoStartTime, current_time);
+        if(dur >= VIDEO_DURATION) {
+            std::lock_guard<std::mutex> lock(recordingSwapMutex);
+            stopPipeline();
+            pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    }
     
     std::cout << "Exiting recordingLoop()" << std::endl;
 }
