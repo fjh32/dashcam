@@ -172,7 +172,7 @@ void CameraRecorder::setupGstElements(int argc, char* argv[]) {
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
     #ifdef RPI_MODE
-    gstData->encoder = gst_element_factory_make("omxh264enc", "encoder");
+    gstData->encoder = gst_element_factory_make("x264enc", "encoder");
     std::cout << "Using omxh264enc for RPI_MODE" << std::endl;
     #else
     gstData->encoder = gst_element_factory_make("x264enc", "encoder");
