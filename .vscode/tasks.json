@@ -12,6 +12,16 @@
             ]
         },
         {
+            "label": "RPI cmake build dashcam",
+            "type": "shell",
+            "command": "${workspaceFolder}/build.sh",
+            "args": ["-d", "-rpi"],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
             "type": "cppbuild",
             "label": "C/C++: g++ build active file",
             "command": "/usr/bin/g++",
