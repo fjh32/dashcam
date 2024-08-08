@@ -44,3 +44,4 @@ cd gst-rpicamsrc
 make
 sudo make install
 ```
+`sudo apt install gstreamer1.0-libcamera`

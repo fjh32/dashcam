@@ -169,7 +169,7 @@ void CameraRecorder::setupGstElements(int argc, char* argv[]) {
     gstData->source = gst_element_factory_make("v4l2src", "source");
     #else
     std::cout << "rpi libcamera src mode\n";
-    gstData->source = gst_element_factory_make("rpicamsrc", "source");
+    gstData->source = gst_element_factory_make("libcamerasrc", "source");
     #endif
     //g_object_set(gstData->source, "device", "/dev/video0", NULL);
     gstData->queue = gst_element_factory_make("queue", "queue_thread");
