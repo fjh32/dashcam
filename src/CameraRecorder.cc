@@ -16,6 +16,7 @@ GstData::~GstData() {
 CameraRecorder::CameraRecorder(int argc, char* argv[]) {
     isRecording = false;
     killed = false;
+    pipelineRunning = false;
     recordingDir = RECORDING_DIR;
     recordingSaveDir = RECORDING_SAVE_DIR;
     setupGstElements(argc, argv);
@@ -40,11 +41,11 @@ CameraRecorder::~CameraRecorder() {
 void CameraRecorder::mainLoop() {
     recordingThread = std::thread(&CameraRecorder::startRecording, this);
     cleanupThread = std::thread(&CameraRecorder::cleanupThreadLoop, this);
-    // listenOnPipe();
-    while(true)
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
+    listenOnPipe();
+    // while(true)
+    // {
+    //     std::this_thread::sleep_for(std::chrono::seconds(1));
+    // }
 }
 
 void CameraRecorder::startRecording() {
@@ -77,12 +78,12 @@ void CameraRecorder::startPipeline() {
     #ifdef DEBUG
     std::cout << "startPipeline()\n";
     #endif
-
+    
     currentlyRecordingVideoName = makeNewFilename();
     g_object_set(gstData->sink, "location", currentlyRecordingVideoName.c_str(), NULL);
     std::cout << "Recording to file: " << currentlyRecordingVideoName << std::endl;
     gst_element_set_state(gstData->pipeline, GST_STATE_PLAYING);
-
+    pipelineRunning = true;
     currentVideoStartTime = now_steady();
     gstData->bus = gst_element_get_bus(gstData->pipeline);
     while (true) {
@@ -118,46 +119,11 @@ void CameraRecorder::stopPipeline() {
     // Add code here
     std::cout << "stopPipeline(): Stopping recording" << std::endl;
     
+
     gst_element_send_event(gstData->pipeline, gst_event_new_eos());
-    pipelineThread.join();
-
-    // #ifdef RPI_MODE
-    // GstStateChangeReturn ret;
-    // if (gstData->pipeline != NULL) {
-    //     ret = gst_element_set_state(gstData->pipeline, GST_STATE_PAUSED);
-    //     if (ret == GST_STATE_CHANGE_FAILURE) {
-    //         g_printerr("Failed to set pipeline to PAUSED state.\n");
-    //         gst_object_unref(gstData->pipeline);
-    //         return;
-    //     }
-    // }
-
-    // // Set the pipeline to READY state
-    // if (gstData->pipeline != NULL) {
-    //     ret = gst_element_set_state(gstData->pipeline, GST_STATE_READY);
-    //     if (ret == GST_STATE_CHANGE_FAILURE) {
-    //         g_printerr("Failed to set pipeline to READY state.\n");
-    //         gst_object_unref(gstData->pipeline);
-    //         return;
-    //     }
-    // }
-
-    // // Finally, set the pipeline to NULL state
-    // if (gstData->pipeline != NULL) {
-    //     ret = gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
-    //     if (ret == GST_STATE_CHANGE_FAILURE) {
-    //         g_printerr("Failed to set pipeline to NULL state.\n");
-    //         gst_object_unref(gstData->pipeline);
-    //         return;
-    //     }
-    // }
-
-    // // Cleanup
-    // if (gstData->pipeline != NULL) {
-    //     gst_object_unref(gstData->pipeline);
-    // }
-    // #endif
+    pipelineThread.join();    
     gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    pipelineRunning = false;
     
     std::cout << "stopPipeline(): Recording stopped" << std::endl;
 }
@@ -174,7 +140,7 @@ bool CameraRecorder::handleBusMessage(GstMessage *msg) {
             g_printerr("Debugging information: %s\n", debug_info ? debug_info : "none");
             g_clear_error(&err);
             g_free(debug_info);
-            gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+            // gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
             eosSwitch = true;
             break;
         }

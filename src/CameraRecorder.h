@@ -55,7 +55,7 @@ class CameraRecorder {
         void mainLoop();
 
     private:
-        bool isRecording, killed;
+        bool isRecording, killed, pipelineRunning;
         std::unique_ptr<GstData> gstData;
         std::string currentlyRecordingVideoName;
         std::string recordingDir, recordingSaveDir;
