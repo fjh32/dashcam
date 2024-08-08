@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     gst_init(&argc, &argv);
 
     // Create the elements
-    source = gst_element_factory_make("libcamerasrc", "source");
+    source = gst_element_factory_make("v4l2src", "source");
     convert = gst_element_factory_make("videoconvert", "convert");
     encoder = gst_element_factory_make("x264enc", "encoder");
     mux = gst_element_factory_make("mp4mux", "mux");
@@ -120,12 +120,25 @@ int main(int argc, char *argv[]) {
     // Set the pipeline state to NULL before reconfiguring
     std::cout<<"Setting pipeline state to NULL\n";
     gst_element_set_state(pipeline, GST_STATE_NULL);
+    auto bus = gst_element_get_bus(pipeline);
+    GstMessage *msg;
+    while ((msg = gst_bus_pop(bus))) {
+        gst_message_unref(msg);
+    }
+    gst_object_unref(bus);
 
     // Record the second segment
     record_segment(pipeline, filesink, "output2.mp4", 10);
 
     // Clean up
     gst_element_set_state(pipeline, GST_STATE_NULL);
+    auto bus = gst_element_get_bus(pipeline);
+    GstMessage *msg;
+    while ((msg = gst_bus_pop(bus))) {
+        gst_message_unref(msg);
+    }
+    gst_object_unref(bus);
+
     gst_object_unref(pipeline);
 
     return 0;
