@@ -6,84 +6,72 @@ using namespace cv;
 GstData::GstData() {}
 
 GstData::~GstData() {
+    #ifdef DEBUG
     std::cout << "Destructor called for GstData" << std::endl;
+    #endif
 }
 
 ///////////////////////////////////////////////////////////////////////
 
-/*
-mainloop()
-    start thread to listenOnPipe()
-    start thread to cleanup old files - same logic as we had before
-    thread for recordingLoop
-
-
- */
-void CameraRecorder::mainLoop() {
-    // std::thread recordingThread(&CameraRecorder::recordingLoop, this);
-    // recordingThread.join();
-    // recordingLoopThread = std::thread(&CameraRecorder::recordingLoop, this);
-
-    // recordingLoopThread.join();
-    recordingLoop();
+CameraRecorder::CameraRecorder(int argc, char* argv[]) {
+    isRecording = false;
+    killed = false;
+    recordingDir = RECORDING_DIR;
+    recordingSaveDir = RECORDING_SAVE_DIR;
+    setupGstElements(argc, argv);
+    makeRecordingDirs();
+    createListeningPipe();
+    std::cout << "Gstreamer initialized" << std::endl;
+    
 }
 
-/*
-recordingLoop()
-    thr = thread for startrecording()
-    // starttime
-    while() {
-        mutex lock acquire videostarttime
-        if currenttime - videostarttime >= VIDEO_DURATION
-            stoprecording()
-            thr = thread for startrecording()
-                  
-        sleep(1s)
-    }
+CameraRecorder::~CameraRecorder() {
+    // Add destructor code here
+    #ifdef DEBUG
+    std::cout << "Destructor called for Camera Recorder" << std::endl;
+    #endif
 
-*/
-void CameraRecorder::recordingLoop() {
+    if(!killed) {
+        kill();
+    }
+    gst_object_unref(gstData->pipeline);
+}
+
+void CameraRecorder::mainLoop() {
+    recordingThread = std::thread(&CameraRecorder::startRecording, this);
+    cleanupThread = std::thread(&CameraRecorder::cleanupThreadLoop, this);
+    listenOnPipe();
+}
+
+void CameraRecorder::startRecording() {
     std::cout << "Starting Recording Loop\n";
-    //  Test out start/stop
-    // recordingThread = std::thread(&CameraRecorder::startRecording, this);
+
+    ////  Test out start/stop
+    // pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
     // std::this_thread::sleep_for(std::chrono::seconds(5));
-    // stopRecording();
+    // stopPipeline();
     ///////////////////////
     
     isRecording = true;
-    recordingThread = std::thread(&CameraRecorder::startRecording, this);
+    pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
     std::this_thread::sleep_for(std::chrono::seconds(1));
     while(isRecording) {
         auto current_time = now_steady();
         auto dur = duration<std::chrono::seconds>(currentVideoStartTime, current_time);
         if(dur >= VIDEO_DURATION) {
             std::lock_guard<std::mutex> lock(recordingSwapMutex);
-            stopRecording();
-            recordingThread = std::thread(&CameraRecorder::startRecording, this);
+            stopPipeline();
+            pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
         }
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
     }
     
-    stopRecording();
     std::cout << "Exiting recordingLoop()" << std::endl;
-
 }
 
-/*
-startrecording()
-    currentlyRecordingVideoName = create new video file
-    start video - state = PLAYING
-    mutex.lock acquire and set videostarttime
-
-    while (isRecording)
-        get bus messages
-        if (message is EOS)
-            break;
-    stop video - state = NULL
-    */
-void CameraRecorder::startRecording() {
+void CameraRecorder::startPipeline() {
     #ifdef DEBUG
-    std::cout << "startRecording()\n";
+    std::cout << "startPipeline()\n";
     #endif
 
     currentlyRecordingVideoName = makeNewFilename();
@@ -106,67 +94,102 @@ void CameraRecorder::startRecording() {
     gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
     gst_object_unref(gstData->bus);
     #ifdef DEBUG
-    std::cout << "EXITING startRecording()." << std::endl;
+    std::cout << "EXITING startPipeline()." << std::endl;
     #endif
 }
 
-/*
-stoprecording()
-    send eos to pipeline
-    thr.join() // wait for recording to stop
-*/
-void CameraRecorder::stopRecording() {
+void CameraRecorder::stopPipeline() {
     // Add code here
-    std::cout << "stopRecording(): Stopping recording" << std::endl;
+    std::cout << "stopPipeline(): Stopping recording" << std::endl;
     
     gst_element_send_event(gstData->pipeline, gst_event_new_eos());
-    recordingThread.join();
+    pipelineThread.join();
     
-    std::cout << "stopRecording(): Recording stopped" << std::endl;
+    std::cout << "stopPipeline(): Recording stopped" << std::endl;
 }
 
 void CameraRecorder::kill() {
-    std::cout<< "Killing entire thing" << std::endl;
-    // stopRecording();
+    std::cout<< "starting kill(): Killing entire thing" << std::endl;
+    stopPipeline();
     isRecording = false;
-    // gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    recordingThread.join();
+    cleanupThread.join();
+    removeListeningPipe();
+    killed = true;
+
+    std::cout << "ending kill(): Recording loop killed" << std::endl;
 }
 
-/*
-Ideal flow:
 
-saveRecordings(saveseconds) // on pipe receive save:300
-    currenttime
-    if savetime < videoduration
-        filetosave = currentlyRecordingVideoName
-        stoprecording()
-        thr = thread for startrecording()
-        save filetosave to recordingSaveDir
-    else
-        get list of files in recordingDir where time > threshold time
-        save each file f to recordingSaveDir
-            if filetosave == currentlyRecordingVideoName
-                stoprecording()
-                thr = thread for startrecording()
-            f.save file to recordingSaveDir
-*/
+void CameraRecorder::saveRecordings(int seconds_back_to_save) {
+    auto current_time = now();
+    auto threshold_time = current_time - seconds_back_to_save;
+    if(seconds_back_to_save <= VIDEO_DURATION) {
+        std::string filename = currentlyRecordingVideoName;
+        std::string baseFilename = filename.substr(filename.find_last_of("/\\") + 1);
+        std::string savePath = recordingSaveDir + baseFilename;
+        std::lock_guard<std::mutex> lock(recordingSwapMutex);
+        stopPipeline();
+        pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
+        std::filesystem::copy_file(filename, savePath, std::filesystem::copy_options::overwrite_existing);
+        std::cout << "Saved file: " << savePath << std::endl;
 
-CameraRecorder::CameraRecorder(int argc, char* argv[]) {
-    // isRecording = true;
-    recordingDir = RECORDING_DIR;
-    recordingSaveDir = RECORDING_SAVE_DIR;
+    } else {
+        auto dir_contents = getRecordingDirContents();
+        for(const auto& entry :dir_contents) {
+            std::time_t file_timestamp = time_t_from_direntry(entry);
+            if (file_timestamp > threshold_time) {
+                    std::string filename = entry.path().filename().string();
 
-    setupGstElements(argc, argv);
-    std::cout << "Gstreamer initialized" << std::endl;
-    
+                    if (currentlyRecordingVideoName.find(filename) != std::string::npos) {
+                        std::lock_guard<std::mutex> lock(recordingSwapMutex);
+                        stopPipeline();
+                        pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
+                    }
+
+                    std::string savePath = recordingSaveDir + filename;
+                    std::filesystem::copy_file(entry.path(), savePath, std::filesystem::copy_options::overwrite_existing);
+                    std::cout << "Saved file: " << filename << std::endl;
+                }
+        }
+    }
 }
 
-CameraRecorder::~CameraRecorder() {
-    // Add destructor code here
-    std::cout << "Destructor called for Camera Recorder" << std::endl;
-    gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
-    gst_object_unref(gstData->pipeline);
+void CameraRecorder::cleanupThreadLoop() {
+    #ifdef DEBUG
+    std::cout << "cleanupThreadLoop()\n";
+    #endif
+
+    time_t start_time = now();
+    std::time_t threshold_time = start_time - DELETE_OLDER_THAN;
+    while(isRecording) {
+
+        time_t current_time = now();
+        auto diff = current_time - start_time;
+        if (diff > VIDEO_DURATION) {
+            deleteOlderFiles(threshold_time);
+            start_time = current_time;
+            threshold_time = start_time - DELETE_OLDER_THAN;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));   
+    }
+    #ifdef DEBUG
+    std::cout << "Closing cleanupThreadLoop()\n";
+    #endif
 }
+
+void CameraRecorder::deleteOlderFiles(std::time_t threshold_time) {
+    auto dir_contents = getRecordingDirContents();
+    for(auto &entry : dir_contents) {
+        std::time_t file_timestamp = time_t_from_direntry(entry);
+
+        if (file_timestamp < threshold_time) {
+            std::filesystem::remove(entry);
+            std::cout << "Cleaned up file: " << entry.path().filename().string() << std::endl;
+        }
+    }
+}
+
 
 void CameraRecorder::setupGstElements(int argc, char* argv[]) {
     // Add code here
@@ -200,27 +223,12 @@ void CameraRecorder::setupGstElements(int argc, char* argv[]) {
     g_object_set(gstData->capsfilter, "caps", caps, nullptr);
     gst_caps_unref(caps);
 
-    // // gstData->bus = gst_element_get_bus(gstData->pipeline);
-    // currentlyRecordingVideoName = makeNewFilename();
-
-    // g_object_set(gstData->sink, "location", currentlyRecordingVideoName.c_str(), NULL);
-
     gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder, gstData->muxer, gstData->sink, NULL);
     if(!gst_element_link_many(gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder, gstData->muxer, gstData->sink, NULL)) {
         std::cerr << "Error: Could not link gstreamer elements." << std::endl;
         exit(1);
     }
 }
-
-// void CameraRecorder::startRecording() {
-//     #ifdef DEBUG
-//     std::cout << "startRecording()\n";
-//     #endif
-    
-//     #ifdef DEBUG
-//     std::cout << "EXITING startRecording(). this->isRecording " << (isRecording ? "true" : "false") << std::endl;
-//     #endif
-// }
 
 bool CameraRecorder::handleBusMessage(GstMessage *msg) {
     // Add code here
@@ -240,8 +248,6 @@ bool CameraRecorder::handleBusMessage(GstMessage *msg) {
         }
         case GST_MESSAGE_EOS:
             g_print("End-Of-Stream reached.\n");
-            // switchFileSink();
-            // gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
             eosSwitch = true;
             break;
         default:
@@ -251,18 +257,94 @@ bool CameraRecorder::handleBusMessage(GstMessage *msg) {
     return eosSwitch;
 }
 
-void CameraRecorder::switchFileSink() {
-
+void CameraRecorder::createListeningPipe() {
+    // Add createListeningPipe code here
+    if (mkfifo(PIPE_NAME, 0666) == -1) {
+        std::string errstring = strerror(errno);
+        if (errstring.find("File exists") != std::string::npos) {
+            std::filesystem::remove(PIPE_NAME);
+            createListeningPipe();
+        } else {
+            std::cerr << "Error creating named pipe: " << strerror(errno) << std::endl;
+            exit(1);
+        }
+    }
+    std::cout << "Named pipe created at " << PIPE_NAME << std::endl;
 }
 
-// void CameraRecorder::stopRecording() {
-//     // Add code here
-//     std::cout << "Stopping recording" << std::endl;
-//     isRecording = false;
-// }
+void CameraRecorder::removeListeningPipe() {
+    // Add removeListeningPipe code here
+    if (unlink(PIPE_NAME) == -1) {
+        std::cerr << "Error removing named pipe: " << strerror(errno) << std::endl;
+        exit(1);
+    }
+    std::cout << "Named pipe removed" << std::endl;
+}
+
+void CameraRecorder::listenOnPipe() {
+    #ifdef DEBUG
+    std::cout << "listenOnPipe()\n";
+    #endif
+
+    std::string receivedMessage;
+    std::regex saveRegex("save:(\\d+)");
+
+    while(1) {
+        std::ifstream pipe(PIPE_NAME);
+        if (!pipe) {
+            std::cerr << "Error opening named pipe: " << strerror(errno) << std::endl;
+            exit(1);
+        }
+
+        std::getline(pipe, receivedMessage); // blocking read on pipe
+        std::cout << "Received message on pipe: " << receivedMessage << std::endl;
+
+        std::smatch match;
+        if (receivedMessage == "kill") {
+            kill();
+            break;
+        }
+        else if (std::regex_match(receivedMessage, match, saveRegex)) {
+            int value = std::stoi(match[1].str());
+            std::cout << "Received save command with value: " << value << std::endl;
+            saveRecordings(value);
+        }
+        pipe.close(); // close the pipe after reading
+    }
+
+    #ifdef DEBUG
+    std::cout << "Exiting listenOnPipe()\n";
+    #endif
+}
+
 
 std::string CameraRecorder::makeNewFilename() {
     return recordingDir + "output_" + formatted_time() + ".mkv";
 
+}
+
+void CameraRecorder::makeRecordingDirs() {
+    if (!std::filesystem::exists(recordingDir)) {
+        if (!std::filesystem::create_directory(recordingDir)) {
+            std::cerr << "Error: Could not create recording directory." << std::endl;
+            exit(1);
+        }
+    }
+    if (!std::filesystem::exists(recordingSaveDir)) {
+        if (!std::filesystem::create_directory(recordingSaveDir)) {
+            std::cerr << "Error: Could not create recording save directory." << std::endl;
+            exit(1);
+        }
+    }
+}
+
+std::vector<std::filesystem::directory_entry> CameraRecorder::getRecordingDirContents() {
+    std::vector<std::filesystem::directory_entry> dir_contents;
+    for (const auto& entry : std::filesystem::directory_iterator(recordingDir)) {
+        if (std::filesystem::is_regular_file(entry)) {
+            dir_contents.push_back(entry);
+        }
+    }
+    return dir_contents;
 }
 ///////////////////////////////////////////////////////////////////////

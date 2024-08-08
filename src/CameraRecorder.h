@@ -47,31 +47,32 @@ class CameraRecorder {
         ~CameraRecorder(); // Destructor
 
         void startRecording();
+        void startPipeline();
         void stopRecording();
+        void stopPipeline();
         void recordingLoop();
         void kill();
         void mainLoop();
 
     private:
-        bool isRecording;
+        bool isRecording, killed;
         std::unique_ptr<GstData> gstData;
         std::string currentlyRecordingVideoName;
         std::string recordingDir, recordingSaveDir;
 
         std::mutex recordingSwapMutex;
         std::chrono::_V2::steady_clock::time_point currentVideoStartTime;
-        // std::string recordingDir, recordingSaveDir;
-        // cv::VideoCapture cap;
-        // cv::VideoWriter writer;
-        // double height, width;
-        std::thread recordingThread, recordingLoopThread;
-        // std::thread cleanupThread;
-        // std::string currentlyRecordingVideoName;
-        // std::mutex writeMutex;
-        void setupGstElements(int argc, char* argv[]);
-        std::string makeNewFilename();
+        std::thread pipelineThread, recordingThread, cleanupThread;
         
-        void switchFileSink();
+        void setupGstElements(int argc, char* argv[]);
+        void saveRecordings(int seconds_back_to_save);
+        std::string makeNewFilename();
+        void createListeningPipe();
+        void listenOnPipe();
+        void removeListeningPipe();
         bool handleBusMessage(GstMessage *msg);
-
+        void makeRecordingDirs();
+        void cleanupThreadLoop();
+        void deleteOlderFiles(std::time_t threshold_time);
+        std::vector<std::filesystem::directory_entry> getRecordingDirContents();
 };

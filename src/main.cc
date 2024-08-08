@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
 
 void catch_sigint(int signum)
 {
-    cameraRecorder->kill();
+    // cameraRecorder->kill();
     cout << "Exiting cleanly...\n";
 
     exit(0);
