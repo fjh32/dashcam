@@ -148,6 +148,7 @@ bool CameraRecorder::handleBusMessage(GstMessage *msg) {
             eosSwitch = true;
             break;
         default:
+            g_print("Unexpected message received.\n");
             break;
     }
     // gst_message_unref(msg);
