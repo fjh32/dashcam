@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     gst_init(&argc, &argv);
 
     // Create the elements
-    source = gst_element_factory_make("v4l2src", "source");
+    source = gst_element_factory_make("libcamerasrc", "source");
     convert = gst_element_factory_make("videoconvert", "convert");
     encoder = gst_element_factory_make("x264enc", "encoder");
     mux = gst_element_factory_make("mp4mux", "mux");
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Set properties for the source element
-    g_object_set(source, "bitrate", 17000000, NULL);  // Set the bitrate to a suitable value
+    // g_object_set(source, "bitrate", 17000000, NULL);  // Set the bitrate to a suitable value
 
     // Create the empty pipeline
     pipeline = gst_pipeline_new("test-pipeline");
