@@ -2,3 +2,47 @@ Named pipe created at /tmp/camrecorder.pipe
 Gstreamer initialized
 Starting Recording Loop
 Recording to file: /home/recordings/output_08-07-2024_210647.mkv
+stopPipeline(): Stopping recording
+End-Of-Stream reached.
+stopPipeline(): Recording stopped
+Recording to file: /home/recordings/output_08-07-2024_213648.mkv
+Cleaned up file: output_08-06-2024_160548.mkv
+Cleaned up file: output_08-06-2024_090547.mkv
+Cleaned up file: output_08-06-2024_100547.mkv
+Cleaned up file: output_08-06-2024_110547.mkv
+Cleaned up file: output_08-06-2024_183548.mkv
+Cleaned up file: output_08-06-2024_143548.mkv
+Cleaned up file: output_08-06-2024_150548.mkv
+Cleaned up file: output_08-06-2024_113547.mkv
+Cleaned up file: output_08-06-2024_063547.mkv
+Cleaned up file: output_08-06-2024_073547.mkv
+Cleaned up file: output_08-06-2024_163548.mkv
+Cleaned up file: output_08-06-2024_170548.mkv
+Cleaned up file: output_08-06-2024_173548.mkv
+Cleaned up file: output_08-06-2024_083547.mkv
+Cleaned up file: output_08-06-2024_140548.mkv
+Cleaned up file: output_08-06-2024_180548.mkv
+Cleaned up file: output_08-06-2024_123547.mkv
+Cleaned up file: output_08-06-2024_190548.mkv
+Cleaned up file: output_08-06-2024_193548.mkv
+Cleaned up file: output_08-06-2024_130547.mkv
+Cleaned up file: output_08-06-2024_200548.mkv
+Cleaned up file: output_08-06-2024_050547.mkv
+Cleaned up file: output_08-06-2024_120547.mkv
+Cleaned up file: output_08-06-2024_203548.mkv
+Cleaned up file: output_08-06-2024_133547.mkv
+Cleaned up file: output_08-06-2024_093547.mkv
+Cleaned up file: output_08-06-2024_153548.mkv
+Cleaned up file: output_08-06-2024_053547.mkv
+Cleaned up file: output_08-06-2024_080547.mkv
+Cleaned up file: output_08-06-2024_060547.mkv
+Cleaned up file: output_08-06-2024_103547.mkv
+Cleaned up file: output_08-06-2024_070547.mkv
+Exiting cleanly...
+starting kill(): Killing entire thing
+stopPipeline(): Stopping recording
+End-Of-Stream reached.
+stopPipeline(): Recording stopped
+Exiting recordingLoop()
+Named pipe removed
+ending kill(): Recording loop killed

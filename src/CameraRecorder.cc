@@ -167,10 +167,17 @@ void CameraRecorder::setupGstElements(int argc, char* argv[]) {
     gstData->pipeline = gst_pipeline_new("recording_pipeline");
 
     gstData->source = gst_element_factory_make("v4l2src", "source");
+    g_object_set(gstData->source, "device", "/dev/video0", NULL);
     gstData->queue = gst_element_factory_make("queue", "queue_thread");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
+    #ifdef RPI_MODE
+    gstData->encoder = gst_element_factory_make("omxh264enc", "encoder");
+    std::cout << "Using omxh264enc for RPI_MODE" << std::endl;
+    #else
     gstData->encoder = gst_element_factory_make("x264enc", "encoder");
+    std::cout << "Using x264enc. NOT RPI_MODE" << std::endl;
+    #endif
     gstData->muxer = gst_element_factory_make("matroskamux", "mux");
     gstData->sink = gst_element_factory_make("filesink", "sink");
 

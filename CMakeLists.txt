@@ -16,9 +16,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 add_executable( dashcam src/main.cc src/utilities.cc src/CameraRecorder.cc)
 
+if(RPI_MODE STREQUAL "ON")
+    target_compile_definitions(dashcam PRIVATE RPI_MODE)
+endif()
+
 if(NOT CMAKE_BUILD_TYPE OR NOT CMAKE_BUILD_TYPE STREQUAL "Release")
-    # add_compile_definitions(DEBUG)
-    target_compile_definitions(dashcam PRIVATE DEBUG)
+    add_compile_definitions(DEBUG)
+    # target_compile_definitions(dashcam PRIVATE DEBUG )
 endif()
 
 target_link_libraries( dashcam ${OpenCV_LIBS} ${GST_LIBRARIES})
