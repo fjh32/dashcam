@@ -31,7 +31,6 @@
 
 //     exit(0);
 // }
-
 #include <gst/gst.h>
 #include <iostream>
 #include <thread>
@@ -80,6 +79,8 @@ void record_segment(GstElement *pipeline, GstElement *filesink, const std::strin
 
 int main(int argc, char *argv[]) {
     GstElement *pipeline, *source, *convert, *encoder, *mux, *filesink;
+    GstBus *bus;
+    GstMessage *msg;
 
     gst_init(&argc, &argv);
 
@@ -95,8 +96,8 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    // Set properties for the source element
-    // g_object_set(source, "bitrate", 17000000, NULL);  // Set the bitrate to a suitable value
+    // Set properties for the source element if needed
+    // g_object_set(source, "property-name", value, NULL);
 
     // Create the empty pipeline
     pipeline = gst_pipeline_new("test-pipeline");
@@ -115,13 +116,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Record the first segment
-    record_segment(pipeline, filesink, "output1.mp4", 10);
+    record_segment(pipeline, filesink, "output1.mp4", 5);
 
-    // Set the pipeline state to NULL before reconfiguring
-    std::cout<<"Setting pipeline state to NULL\n";
+    // Set the pipeline state to NULL and handle cleanup
+    std::cout << "Setting pipeline state to NULL\n";
     gst_element_set_state(pipeline, GST_STATE_NULL);
-    GstBus *bus;
-    GstMessage *msg;
+
+    // Handle any pending messages
     bus = gst_element_get_bus(pipeline);
     while ((msg = gst_bus_pop(bus))) {
         gst_message_unref(msg);
@@ -129,10 +130,12 @@ int main(int argc, char *argv[]) {
     gst_object_unref(bus);
 
     // Record the second segment
-    record_segment(pipeline, filesink, "output2.mp4", 10);
+    record_segment(pipeline, filesink, "output2.mp4", 5);
 
     // Clean up
     gst_element_set_state(pipeline, GST_STATE_NULL);
+
+    // Handle any remaining messages
     bus = gst_element_get_bus(pipeline);
     while ((msg = gst_bus_pop(bus))) {
         gst_message_unref(msg);
