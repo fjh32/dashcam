@@ -27,14 +27,13 @@ CameraRecorder::CameraRecorder(int argc, char* argv[]) {
 }
 
 CameraRecorder::~CameraRecorder() {
+    kill();
     // Add destructor code here
     #ifdef DEBUG
     std::cout << "Destructor called for Camera Recorder" << std::endl;
     #endif
 
-    if(!killed) {
-        kill();
-    }
+    
     gst_object_unref(gstData->pipeline);
 }
 
@@ -98,16 +97,6 @@ void CameraRecorder::startPipeline() {
         gst_message_unref(msg);
     }
     std::cout << "1 no segfault here" << std::endl;
-
-    // if(gstData->pipeline) {
-    //     std::cout << "ZZ no segfault here" << std::endl;
-    //     auto ret = gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
-    //     if (ret == GST_STATE_CHANGE_FAILURE) {
-    //         g_printerr("Failed to set pipeline to NULL state.\n");
-    //         gst_object_unref(gstData->pipeline);
-    //         return;
-    //     }
-    // }
     std::cout << "2 no segfault here" << std::endl;
     gst_object_unref(gstData->bus);
     #ifdef DEBUG
@@ -157,12 +146,14 @@ bool CameraRecorder::handleBusMessage(GstMessage *msg) {
 
 void CameraRecorder::kill() {
     std::cout<< "starting kill(): Killing entire thing" << std::endl;
-    stopPipeline();
-    isRecording = false;
-    recordingThread.join();
-    cleanupThread.join();
-    removeListeningPipe();
-    killed = true;
+    if(!killed) {
+        stopPipeline();
+        isRecording = false;
+        recordingThread.join();
+        cleanupThread.join();
+        removeListeningPipe();
+        killed = true;
+    }
 
     std::cout << "ending kill(): Recording loop killed" << std::endl;
 }
