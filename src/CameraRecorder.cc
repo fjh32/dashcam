@@ -120,7 +120,16 @@ void CameraRecorder::stopPipeline() {
     //     std::cout << "message cleared from bus\n";
     //     gst_message_unref(msg);
     // }
-    // gst_object_unref(bus);   
+    // gst_object_unref(bus);
+
+    std::cout << "PAUSING PLAYBACK\n";
+    gst_element_set_state(gstData->pipeline, GST_STATE_PAUSED);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::cout << "DOWN TO READY STATE\n";
+    gst_element_set_state(gstData->pipeline, GST_STATE_READY);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    
+    std::cout << "DOWN TO NULL STATE\n";
     gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
     pipelineRunning = false;
     
