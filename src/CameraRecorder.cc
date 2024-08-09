@@ -28,8 +28,7 @@ CameraRecorder::CameraRecorder(int argc, char* argv[]) {
 
 CameraRecorder::~CameraRecorder() {
     kill();
-    std::cout << "DOWN TO NULL STATE\n";
-    gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    
     // Add destructor code here
     #ifdef DEBUG
     std::cout << "Destructor called for Camera Recorder" << std::endl;
@@ -60,8 +59,8 @@ void CameraRecorder::startRecording() {
     
     isRecording = true;
     pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
     while(isRecording) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
         auto current_time = now_steady();
         auto dur = duration<std::chrono::seconds>(currentVideoStartTime, current_time);
         if(dur >= VIDEO_DURATION) {
@@ -69,7 +68,7 @@ void CameraRecorder::startRecording() {
             stopPipeline();
             pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        
     }
     
     std::cout << "Exiting recordingLoop()" << std::endl;
@@ -131,6 +130,8 @@ void CameraRecorder::stopPipeline() {
     gst_element_set_state(gstData->pipeline, GST_STATE_READY);
     std::this_thread::sleep_for(std::chrono::seconds(1));
     
+    // std::cout << "DOWN TO NULL STATE\n";
+    // gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
     
     pipelineRunning = false;
     
