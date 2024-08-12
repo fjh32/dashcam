@@ -103,46 +103,43 @@ void CameraRecorder::startPipeline() {
 }
 
 void CameraRecorder::stopPipeline() {
-    // Add code here
     std::cout << "stopPipeline(): Stopping recording" << std::endl;
-    
 
+    // Send EOS event
     gst_element_send_event(gstData->pipeline, gst_event_new_eos());
-    pipelineThread.join(); 
+
+    // Wait for the pipeline thread to finish
+    if (pipelineThread.joinable()) {
+        pipelineThread.join();
+    }
     std::cout << "stopPipeline(): Pipeline thread joined" << std::endl;
-    // GstBus *bus;
-    // GstMessage *msg;
 
-    // bus = gst_element_get_bus(gstData->pipeline);
-    // while ((msg = gst_bus_pop(bus))) {
-    //     std::cout << "message cleared from bus\n";
-    //     gst_message_unref(msg);
-    // }
-    // gst_object_unref(bus);
+    // Wait for EOS message
+    GstBus *bus = gst_element_get_bus(gstData->pipeline);
+    GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, (GstMessageType)(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
+    if (msg != nullptr) {
+        gst_message_unref(msg);
+    }
+    gst_object_unref(bus);
 
-    std::cout << "PAUSING PLAYBACK\n";
-    gst_element_set_state(gstData->pipeline, GST_STATE_PAUSED);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    std::cout << "DOWN TO READY STATE\n";
-    gst_element_set_state(gstData->pipeline, GST_STATE_READY);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    
+    // Move pipeline directly to NULL state
     std::cout << "DOWN TO NULL STATE\n";
     GstStateChangeReturn ret = gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
-    if(ret == GST_STATE_CHANGE_ASYNC) {
+    if (ret == GST_STATE_CHANGE_ASYNC) {
         std::cout << "Waiting for pipeline to stop\n";
         GstState state;
         ret = gst_element_get_state(gstData->pipeline, &state, NULL, GST_CLOCK_TIME_NONE);
-        if(ret == GST_STATE_CHANGE_FAILURE) {
+        if (ret == GST_STATE_CHANGE_FAILURE) {
             std::cerr << "Error: Could not stop pipeline" << std::endl;
             exit(1);
         }
     }
-    
+
     pipelineRunning = false;
-    
+
     std::cout << "stopPipeline(): Recording stopped" << std::endl;
 }
+
 
 bool CameraRecorder::handleBusMessage(GstMessage *msg) {
     // Add code here
