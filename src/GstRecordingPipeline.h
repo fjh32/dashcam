@@ -36,6 +36,7 @@ class GstRecordingPipeline {
 
         bool pipelineRunning;
         bool pipelineKilled;
+        string currentlyRecordingVideoName;
 
         void startPipeline();
         void stopPipeline();
@@ -43,7 +44,7 @@ class GstRecordingPipeline {
     private:
         unique_ptr<GstData> gstData;
         string recordingDir;
-        string currentlyRecordingVideoName;
+        
         std::thread pipelineThread;
         void pipelineRunner();
         bool handleBusMessage(GstBus *bus);

@@ -16,6 +16,8 @@
 
 using namespace std;
 
+#define PIPE_NAME "/tmp/camrecorder.pipe"
+
 #ifdef DEBUG
 #define VIDEO_DURATION 300 // 10 mins in seconds
 #define RECORDING_DIR "./recordings/"
@@ -47,6 +49,7 @@ class CamService {
         bool safeToEndMainLoop;
 
         void recordingLoop();
+        void createListeningPipe();
         void listenOnPipe();
         void removeListeningPipe();
         void makeRecordingDirs();
