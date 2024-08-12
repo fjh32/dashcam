@@ -26,8 +26,9 @@ GstRecordingPipeline::GstRecordingPipeline( const char dir[], int* argc, char** 
 GstRecordingPipeline::~GstRecordingPipeline() {
     debugPrint("Destroying GstRecordingPipeline object");
     if(pipelineRunning) {
-        // stopPipeline(); // this seems to segfault when using libcamera source on rpi
-        gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+        // Gstreamer needs explicit cleanup
+        // need to explicitly call stopPipeline before the destructor is called
+        stopPipeline(); // this seems to segfault when using libcamera source on rpi
     }
     debugPrint("Unref'ing pipeline");
     gst_object_unref(gstData->pipeline);
