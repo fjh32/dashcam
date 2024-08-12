@@ -3,7 +3,6 @@
 using namespace std;
 
 /// GstData class
-
 GstData::GstData() {
     debugPrint("Creating GstData object");
 }
@@ -29,10 +28,11 @@ GstRecordingPipeline::~GstRecordingPipeline() {
         // Gstreamer needs explicit cleanup
         // need to explicitly call stopPipeline before the destructor is called
         #ifdef RPI_MODE
+        cout << "******* WARNING *******" << endl;
         cout << "Failed to call stopPipeline() before Destructor was called" << endl;
-        cout << "This appears to be an issue setting pipeline state to NULL in a destructor called during program exit 
-                    with libcamera source on the Raspberry Pi" << endl;
+        cout << "This appears to be an issue setting pipeline state to NULL in a destructor called during program exit with libcamera source on the Raspberry Pi" << endl;
         cout << "About to segfault..." << endl;
+        cout << "***** END WARNING *****" << endl;
         #endif
         stopPipeline(); // this seems to segfault when using libcamera source on rpi
     }
@@ -40,7 +40,7 @@ GstRecordingPipeline::~GstRecordingPipeline() {
     gst_object_unref(gstData->pipeline);
 }
 
-void GstRecordingPipeline::startPipeline() {
+void GstRecordingPipeline::pipelineRunner() {
     debugPrint("startPipeline()");
 
     if(!pipelineRunning) {
@@ -52,10 +52,17 @@ void GstRecordingPipeline::startPipeline() {
 
         gstData->bus = gst_element_get_bus(gstData->pipeline);
         while(handleBusMessage(gstData->bus)) {}
+
         gst_object_unref(gstData->bus);
+        pipelineRunning = false;
     }
 
     debugPrint("exiting startPipeline()");
+}
+
+void GstRecordingPipeline::startPipeline() {
+    pipelineThread = std::thread(&GstRecordingPipeline::pipelineRunner, this);
+    
 }
 
 void GstRecordingPipeline::stopPipeline() {
@@ -63,26 +70,13 @@ void GstRecordingPipeline::stopPipeline() {
 
     if(pipelineRunning) {
         debugPrint("Stopping pipeline");
+        
         debugPrint("Sending EOS event");
         gst_element_send_event(gstData->pipeline, gst_event_new_eos());
+        pipelineThread.join();
+        // while(pipelineRunning) {std::this_thread::sleep_for(std::chrono::milliseconds(100));}
         debugPrint("Setting pipeline state to NULL");
-
-        // GstState state;
-        // GstState pending;
-
-        // // Get the pipeline state, blocking until the state change is complete
-        // GstStateChangeReturn ret = gst_element_get_state(gstData->pipeline, &state, &pending, GST_CLOCK_TIME_NONE);
-
-        // if (ret == GST_STATE_CHANGE_SUCCESS) {
-        // std::cout << "Pipeline is now in state: " << gst_element_state_get_name(state) << std::endl;
-        // } else if (ret == GST_STATE_CHANGE_ASYNC) {
-        // std::cout << "Pipeline is still changing state asynchronously to: " << gst_element_state_get_name(pending) << std::endl;
-        // } else {
-        // std::cerr << "Failed to change pipeline state." << std::endl;
-        // }
-
         gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
-        pipelineRunning = false;
     }
 
     debugPrint("exiting stopPipeline()");
@@ -93,7 +87,7 @@ void GstRecordingPipeline::stopPipeline() {
 
 bool GstRecordingPipeline::handleBusMessage(GstBus *bus) {
     bool keepRunning = true;
-    GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
+    GstMessage *msg = gst_bus_timed_pop_filtered(bus, 100*GST_MSECOND, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
     if(msg) {
         GError *err;
         gchar *debug_info;
@@ -122,6 +116,7 @@ bool GstRecordingPipeline::handleBusMessage(GstBus *bus) {
 void GstRecordingPipeline::setupNewVideoSink() {
     currentlyRecordingVideoName = make_new_video_name();
     g_object_set(gstData->sink, "location", currentlyRecordingVideoName.c_str(), nullptr);
+    cout << "Recording to: " << currentlyRecordingVideoName << endl;
 }
 
 void GstRecordingPipeline::setupGstElements() {

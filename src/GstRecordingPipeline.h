@@ -34,6 +34,9 @@ class GstRecordingPipeline {
         GstRecordingPipeline(const char dir[], int* argc, char** argv[]);  // Constructor
         ~GstRecordingPipeline(); // Destructor
 
+        bool pipelineRunning;
+        bool pipelineKilled;
+
         void startPipeline();
         void stopPipeline();
 
@@ -41,7 +44,8 @@ class GstRecordingPipeline {
         unique_ptr<GstData> gstData;
         string recordingDir;
         string currentlyRecordingVideoName;
-        bool pipelineRunning;
+        std::thread pipelineThread;
+        void pipelineRunner();
         bool handleBusMessage(GstBus *bus);
         void setupNewVideoSink();
         void setupGstElements();
