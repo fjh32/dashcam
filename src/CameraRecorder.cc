@@ -115,12 +115,12 @@ void CameraRecorder::stopPipeline() {
     std::cout << "stopPipeline(): Pipeline thread joined" << std::endl;
 
     // Wait for EOS message
-    GstBus *bus = gst_element_get_bus(gstData->pipeline);
-    GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, (GstMessageType)(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
-    if (msg != nullptr) {
-        gst_message_unref(msg);
-    }
-    gst_object_unref(bus);
+    // GstBus *bus = gst_element_get_bus(gstData->pipeline);
+    // GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, (GstMessageType)(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
+    // if (msg != nullptr) {
+    //     gst_message_unref(msg);
+    // }
+    // gst_object_unref(bus);
 
     // Move pipeline directly to NULL state
     std::cout << "DOWN TO NULL STATE\n";
