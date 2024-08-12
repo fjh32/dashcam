@@ -34,16 +34,7 @@ CameraRecorder::~CameraRecorder() {
     #endif
 
     kill();
-    
-    
-    gst_object_unref(gstData->source);
-    gst_object_unref(gstData->queue);
-    gst_object_unref(gstData->capsfilter);
-    gst_object_unref(gstData->videoconvert);
-    gst_object_unref(gstData->encoder);
-    gst_object_unref(gstData->muxer);
-    gst_object_unref(gstData->sink);
-    
+
     gst_object_unref(gstData->pipeline);
 }
 
