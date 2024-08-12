@@ -169,7 +169,7 @@ bool CameraRecorder::handleBusMessage(GstMessage *msg) {
 void CameraRecorder::kill() {
     std::cout<< "starting kill(): Killing entire thing" << std::endl;
     if(!killed) {
-        stopPipeline();
+        // stopPipeline();
         isRecording = false;
         recordingThread.join();
         cleanupThread.join();
