@@ -27,12 +27,15 @@ CameraRecorder::CameraRecorder(int argc, char* argv[]) {
 }
 
 CameraRecorder::~CameraRecorder() {
-    kill();
-    
+
     // Add destructor code here
     #ifdef DEBUG
     std::cout << "Destructor called for Camera Recorder" << std::endl;
     #endif
+
+    kill();
+    
+    
 
     
     gst_object_unref(gstData->pipeline);
@@ -168,6 +171,10 @@ bool CameraRecorder::handleBusMessage(GstMessage *msg) {
 
 void CameraRecorder::kill() {
     std::cout<< "starting kill(): Killing entire thing" << std::endl;
+    if(pipelineRunning) {
+        stopPipeline();
+    }
+
     if(!killed) {
         // stopPipeline();
         isRecording = false;
