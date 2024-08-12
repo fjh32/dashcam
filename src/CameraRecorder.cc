@@ -36,7 +36,13 @@ CameraRecorder::~CameraRecorder() {
     kill();
     
     
-
+    gst_object_unref(gstData->source);
+    gst_object_unref(gstData->queue);
+    gst_object_unref(gstData->capsfilter);
+    gst_object_unref(gstData->videoconvert);
+    gst_object_unref(gstData->encoder);
+    gst_object_unref(gstData->muxer);
+    gst_object_unref(gstData->sink);
     
     gst_object_unref(gstData->pipeline);
 }
@@ -93,15 +99,12 @@ void CameraRecorder::startPipeline() {
         GstMessage *msg = gst_bus_timed_pop_filtered(gstData->bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
         if (msg != nullptr) {
             if(handleBusMessage(msg)) {
-                std::cout << "0 no segfault here" << std::endl;
                 gst_message_unref(msg);
                 break;
             }
         }
         gst_message_unref(msg);
     }
-    std::cout << "1 no segfault here" << std::endl;
-    std::cout << "2 no segfault here" << std::endl;
     gst_object_unref(gstData->bus);
     #ifdef DEBUG
     std::cout << "EXITING startPipeline()." << std::endl;
