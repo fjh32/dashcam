@@ -25,9 +25,10 @@ GstRecordingPipeline::GstRecordingPipeline( const char dir[], int* argc, char** 
 
 GstRecordingPipeline::~GstRecordingPipeline() {
     debugPrint("Destroying GstRecordingPipeline object");
-    // if(pipelineRunning) {
-    //     stopPipeline();
-    // }
+    if(pipelineRunning) {
+        // stopPipeline(); // this seems to segfault when using libcamera source on rpi
+        gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    }
     debugPrint("Unref'ing pipeline");
     gst_object_unref(gstData->pipeline);
 }
@@ -59,19 +60,19 @@ void GstRecordingPipeline::stopPipeline() {
         gst_element_send_event(gstData->pipeline, gst_event_new_eos());
         debugPrint("Setting pipeline state to NULL");
 
-        GstState state;
-        GstState pending;
+        // GstState state;
+        // GstState pending;
 
-        // Get the pipeline state, blocking until the state change is complete
-        GstStateChangeReturn ret = gst_element_get_state(gstData->pipeline, &state, &pending, GST_CLOCK_TIME_NONE);
+        // // Get the pipeline state, blocking until the state change is complete
+        // GstStateChangeReturn ret = gst_element_get_state(gstData->pipeline, &state, &pending, GST_CLOCK_TIME_NONE);
 
-        if (ret == GST_STATE_CHANGE_SUCCESS) {
-        std::cout << "Pipeline is now in state: " << gst_element_state_get_name(state) << std::endl;
-        } else if (ret == GST_STATE_CHANGE_ASYNC) {
-        std::cout << "Pipeline is still changing state asynchronously to: " << gst_element_state_get_name(pending) << std::endl;
-        } else {
-        std::cerr << "Failed to change pipeline state." << std::endl;
-        }
+        // if (ret == GST_STATE_CHANGE_SUCCESS) {
+        // std::cout << "Pipeline is now in state: " << gst_element_state_get_name(state) << std::endl;
+        // } else if (ret == GST_STATE_CHANGE_ASYNC) {
+        // std::cout << "Pipeline is still changing state asynchronously to: " << gst_element_state_get_name(pending) << std::endl;
+        // } else {
+        // std::cerr << "Failed to change pipeline state." << std::endl;
+        // }
 
         gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
         pipelineRunning = false;
