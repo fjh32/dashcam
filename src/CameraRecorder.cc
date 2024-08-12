@@ -130,8 +130,8 @@ void CameraRecorder::stopPipeline() {
     gst_element_set_state(gstData->pipeline, GST_STATE_READY);
     std::this_thread::sleep_for(std::chrono::seconds(1));
     
-    // std::cout << "DOWN TO NULL STATE\n";
-    // gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    std::cout << "DOWN TO NULL STATE\n";
+    gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
     
     pipelineRunning = false;
     

@@ -28,6 +28,7 @@ void catch_sigint(int signum)
 {
     // cameraRecorder->~CameraRecorder();
     // cameraRecorder->kill();
+    cameraRecorder->stopRecording();
     cout << "Exiting cleanly...\n";
 
     exit(0);
