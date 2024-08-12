@@ -128,7 +128,16 @@ void CameraRecorder::stopPipeline() {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     
     std::cout << "DOWN TO NULL STATE\n";
-    gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    GstStateChangeReturn ret = gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    if(ret == GST_STATE_CHANGE_ASYNC) {
+        std::cout << "Waiting for pipeline to stop\n";
+        GstState state;
+        ret = gst_element_get_state(gstData->pipeline, &state, NULL, GST_CLOCK_TIME_NONE);
+        if(ret == GST_STATE_CHANGE_FAILURE) {
+            std::cerr << "Error: Could not stop pipeline" << std::endl;
+            exit(1);
+        }
+    }
     
     pipelineRunning = false;
     
