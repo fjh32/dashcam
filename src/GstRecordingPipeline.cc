@@ -28,6 +28,12 @@ GstRecordingPipeline::~GstRecordingPipeline() {
     if(pipelineRunning) {
         // Gstreamer needs explicit cleanup
         // need to explicitly call stopPipeline before the destructor is called
+        #ifdef RPI_MODE
+        cout << "Failed to call stopPipeline() before Destructor was called" << endl;
+        cout << "This appears to be an issue setting pipeline state to NULL in a destructor called during program exit 
+                    with libcamera source on the Raspberry Pi" << endl;
+        cout << "About to segfault..." << endl;
+        #endif
         stopPipeline(); // this seems to segfault when using libcamera source on rpi
     }
     debugPrint("Unref'ing pipeline");
