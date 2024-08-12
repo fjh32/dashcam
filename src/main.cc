@@ -22,6 +22,6 @@ int main(int argc, char* argv[]) {
 void catch_sigint(int signum)
 {
     cout << "Exiting cleanly...\n";
-
+    gstPipeline->stopPipeline();
     exit(signum);
 }
