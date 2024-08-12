@@ -18,6 +18,9 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, catch_sigint);
     
     // camRecorder->recordingLoop();
+    std::atexit([]() {
+        cameraRecorder->~CameraRecorder();
+    });
     cameraRecorder->mainLoop();
     // std::thread thr(&CameraRecorder::mainLoop, cameraRecorder.get());
     // sleep(5);
@@ -31,7 +34,7 @@ void catch_sigint(int signum)
     // cameraRecorder->stopPipeline();
     cout << "Exiting cleanly...\n";
 
-    // exit(0);
+    exit(signum);
 }
 
 
