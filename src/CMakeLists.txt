@@ -9,6 +9,7 @@ set(SOURCES
     BluetoothServer.cc
     CamRecorder.cc
     CameraRecorder.cc
+    GstRecordingPipeline.cc
     NetStreamServer.cc
     main.cc
     
@@ -21,6 +22,7 @@ set(HEADERS
     BluetoothServer.h
     CamRecorder.h
     CameraRecorder.h
+    GstRecordingPipeline.h
     NetStreamServer.h
     # Add header files here
 )

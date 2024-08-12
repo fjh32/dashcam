@@ -1,5 +1,11 @@
 #include "utilities.h"
 
+void debugPrint(std::string message) {
+    #ifdef DEBUG
+    std::cout << message << std::endl;
+    #endif
+}
+
 std::time_t now() {
     return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 }
@@ -43,4 +49,13 @@ std::time_t time_t_from_direntry(std::filesystem::directory_entry dir_entry) {
         + std::chrono::system_clock::now());
     // Convert to time_t
     return std::chrono::system_clock::to_time_t(sctp);
+}
+
+void makeDir(const char * dir) {
+    if (!std::filesystem::exists(dir)) {
+        if (!std::filesystem::create_directory(dir)) {
+            std::cerr << "Error: Could not create recording directory." << std::endl;
+            exit(1); // handle better
+        }
+    }
 }

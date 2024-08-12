@@ -1,37 +1,26 @@
 // // #include "CamRecorder.h"
 #include <iostream>
 #include <signal.h>
+#include <memory>
 
-#include "CameraRecorder.h"
+#include "GstRecordingPipeline.h"
 
 using namespace std;
 
-// unique_ptr<CamRecorder> camRecorder;
+unique_ptr<GstRecordingPipeline> gstPipeline;
 
-unique_ptr<CameraRecorder> cameraRecorder;
 void catch_sigint(int signum);
 
 int main(int argc, char* argv[]) {
-    cameraRecorder = make_unique<CameraRecorder>(argc, argv);
+    gstPipeline = make_unique<GstRecordingPipeline>("./recordings/", &argc, &argv);
 
-    // camRecorder = make_unique<CamRecorder>();
     signal(SIGINT, catch_sigint);
     
-    // camRecorder->recordingLoop();
-    // std::atexit([]() {
-    //     cameraRecorder->~CameraRecorder();
-    // });
-    cameraRecorder->mainLoop();
-    // std::thread thr(&CameraRecorder::mainLoop, cameraRecorder.get());
-    // sleep(5);
-    // cameraRecorder->~CameraRecorder();
+    gstPipeline->startPipeline();
 }
 
 void catch_sigint(int signum)
 {
-    // cameraRecorder->~CameraRecorder();
-    // cameraRecorder->kill();
-    // cameraRecorder->stopPipeline();
     cout << "Exiting cleanly...\n";
 
     exit(signum);
