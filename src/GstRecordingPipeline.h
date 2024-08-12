@@ -37,7 +37,7 @@ class GstRecordingPipeline {
         void startPipeline();
         void stopPipeline();
 
-    // private:
+    private:
         unique_ptr<GstData> gstData;
         string recordingDir;
         string currentlyRecordingVideoName;
