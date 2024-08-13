@@ -153,8 +153,8 @@ void RecordingPipeline::setupGstElements() {
     
     GstCaps *caps = gst_caps_new_simple(
         "video/x-raw",
-        // "format", G_TYPE_STRING, "YUY2",
-        "format", G_TYPE_STRING, "I420",
+        "format", G_TYPE_STRING, "YUY2",
+        // "format", G_TYPE_STRING, "I420",
         "width", G_TYPE_INT, VIDEO_WIDTH,
         "height", G_TYPE_INT, VIDEO_HEIGHT,
         "framerate", GST_TYPE_FRACTION, FRAME_RATE, 1,
