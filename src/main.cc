@@ -57,7 +57,8 @@ int main(int argc, char *argv[]) {
     // Create GStreamer elements
     GstElement *pipeline = gst_pipeline_new("video-pipeline");
     GstElement *source = gst_element_factory_make("libcamerasrc", "source");
-    GstElement *capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
+    // GstElement *capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
+    GstElement *capsfilter = gst_element_factory_make("videoconvert", "videoconvert");
     GstElement *encoder = gst_element_factory_make("v4l2h264enc", "encoder");
     GstElement *parser = gst_element_factory_make("h264parse", "parser");
     GstElement *muxer = gst_element_factory_make("mp4mux", "muxer");
@@ -75,16 +76,16 @@ int main(int argc, char *argv[]) {
     // g_object_set(source, "capture-width", 1920, NULL);
     // g_object_set(source, "capture-height", 1080, NULL);
     // g_object_set(source, "framerate", 30, NULL);
-    GstCaps *caps = gst_caps_new_simple(
-        "video/x-raw",
-        // "format", G_TYPE_STRING, "YUY2",
-        "format", G_TYPE_STRING, "I420",
-        "width", G_TYPE_INT, 640,
-        "height", G_TYPE_INT, 480,
-        "framerate", GST_TYPE_FRACTION, 10, 1,
-        nullptr);
-    g_object_set(capsfilter, "caps", caps, nullptr);
-    gst_caps_unref(caps);
+    // GstCaps *caps = gst_caps_new_simple(
+    //     "video/x-raw",
+    //     // "format", G_TYPE_STRING, "YUY2",
+    //     "format", G_TYPE_STRING, "I420",
+    //     "width", G_TYPE_INT, 640,
+    //     "height", G_TYPE_INT, 480,
+    //     "framerate", GST_TYPE_FRACTION, 10, 1,
+    //     nullptr);
+    // g_object_set(capsfilter, "caps", caps, nullptr);
+    // gst_caps_unref(caps);
 
     // Build the pipeline
     gst_bin_add_many(GST_BIN(pipeline), source, capsfilter, encoder, parser, muxer, sink, NULL);
