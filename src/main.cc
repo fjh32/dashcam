@@ -47,7 +47,6 @@
 //     recordingPipeline->stopPipeline();
 //     exit(signum);
 // }
-
 #include <gst/gst.h>
 #include <iostream>
 
@@ -58,21 +57,34 @@ int main(int argc, char *argv[]) {
     GstElement *pipeline = gst_pipeline_new("video-pipeline");
     GstElement *source = gst_element_factory_make("libcamerasrc", "source");
     GstElement *videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
+    GstElement *capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     GstElement *encoder = gst_element_factory_make("v4l2h264enc", "encoder");
     GstElement *muxer = gst_element_factory_make("mp4mux", "muxer");
     GstElement *sink = gst_element_factory_make("filesink", "sink");
 
-    if (!pipeline || !source || !videoconvert || !encoder || !muxer || !sink) {
+    if (!pipeline || !source || !videoconvert || !capsfilter || !encoder || !muxer || !sink) {
         std::cerr << "Failed to create elements" << std::endl;
         return -1;
     }
 
-    // Set properties
+    // Set the location for the filesink
     g_object_set(sink, "location", "output.mp4", NULL);
 
+    // Set the caps for the capsfilter to match the input expected by v4l2h264enc
+    GstCaps *caps = gst_caps_new_simple("video/x-raw",
+                                        "width", G_TYPE_INT, 1280,
+                                        "height", G_TYPE_INT, 720,
+                                        "framerate", GST_TYPE_FRACTION, 30, 1,
+                                        "format", G_TYPE_STRING, "I420",  // or "NV12"
+                                        NULL);
+    g_object_set(capsfilter, "caps", caps, NULL);
+    gst_caps_unref(caps);
+
     // Build the pipeline
-    gst_bin_add_many(GST_BIN(pipeline), source, videoconvert, encoder, muxer, sink, NULL);
-    if (!gst_element_link_many(source, videoconvert, encoder, muxer, sink, NULL)) {
+    gst_bin_add_many(GST_BIN(pipeline), source, videoconvert, capsfilter, encoder, muxer, sink, NULL);
+
+    // Link the elements together
+    if (!gst_element_link_many(source, videoconvert, capsfilter, encoder, muxer, sink, NULL)) {
         std::cerr << "Failed to link elements" << std::endl;
         gst_object_unref(pipeline);
         return -1;
