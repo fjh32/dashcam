@@ -20,12 +20,6 @@ using namespace std;
 #define VIDEO_HEIGHT 480
 #define FRAME_RATE 10
 
-#ifdef DEBUG
-#define VIDEO_DURATION 300 // 10 mins in seconds
-#else
-#define VIDEO_DURATION  1800 // in seconds
-#endif
-
 static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointer user_data);
 
 class GstData {
@@ -39,7 +33,7 @@ class GstData {
 class RecordingPipeline {
     public:
         // in the future, provide an optional gstreamer source to this pipeline
-        RecordingPipeline(const char dir[], int* argc, char** argv[]); 
+        RecordingPipeline(const char dir[], int vid_duration, int* argc, char** argv[]); 
         ~RecordingPipeline();
 
         bool pipelineRunning;

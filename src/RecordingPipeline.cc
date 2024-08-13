@@ -8,6 +8,7 @@ static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointe
     RecordingPipeline* instance = static_cast<RecordingPipeline*>(user_data);
     string filepath = instance->recordingDir + "/output_" + formatted_time() + ".mkv";
     instance->currentlyRecordingVideoName = filepath;
+    cout << "Recording new video: " << filepath << endl;
     return g_strdup(filepath.c_str()); // Return the new filename (must be dynamically allocated since GStreamer will free it)
 }
 
@@ -16,8 +17,8 @@ GstData::GstData() {}
 GstData::~GstData() {}
 
 /// RecordingPipeline class
-RecordingPipeline::RecordingPipeline( const char dir[], int* argc, char** argv[]) 
-                            : recordingDir(dir), video_duration(VIDEO_DURATION), pipelineRunning(false), currentlyRecordingVideoName("None") {
+RecordingPipeline::RecordingPipeline( const char dir[], int vid_duration, int* argc, char** argv[]) 
+                            : recordingDir(dir), video_duration(vid_duration), pipelineRunning(false), currentlyRecordingVideoName("None") {
     debugPrint("Creating RecordingPipeline object");
     gst_init(argc, argv);
 
@@ -96,18 +97,18 @@ bool RecordingPipeline::handleBusMessage(GstBus *bus) {
         switch(GST_MESSAGE_TYPE(msg)) {
             case GST_MESSAGE_ERROR:
                 gst_message_parse_error(msg, &err, &debug_info);
-                cerr << "Error received from element " << GST_OBJECT_NAME(msg->src) << ": " << err->message << endl;
-                cerr << "Debugging information: " << (debug_info ? debug_info : "none") << endl;
+                cout << "Error received from element " << GST_OBJECT_NAME(msg->src) << ": " << err->message << endl;
+                cout << "Debugging information: " << (debug_info ? debug_info : "none") << endl;
                 g_clear_error(&err);
                 g_free(debug_info);
                 keepRunning = false;
                 break;
             case GST_MESSAGE_EOS:
-                cerr << "End-Of-Stream reached." << endl;
+                cout << "End-Of-Stream reached." << endl;
                 keepRunning = false;
                 break;
             default:
-                cerr << "Unexpected message received." << endl;
+                cout << "Unexpected message received." << endl;
                 break;
         }
         gst_message_unref(msg);
@@ -136,7 +137,7 @@ void RecordingPipeline::setupGstElements() {
     gstData->sink = gst_element_factory_make("splitmuxsink", "sink");
 
     if(!gstData->pipeline || !gstData->source || !gstData->queue || !gstData->capsfilter || !gstData->videoconvert || !gstData->encoder || !gstData->muxer || !gstData->sink) {
-        cerr << "Failed to create elements\n";
+        cout << "Failed to create elements\n";
         exit(1); // TODO: throw exception instead
     }
     
@@ -157,9 +158,8 @@ void RecordingPipeline::setupGstElements() {
     // muxer already added to splitmuxsink, so don't add it to bin or link it
     gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder,  gstData->sink, NULL);
     if(!gst_element_link_many(gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder,  gstData->sink, NULL)) {
-        std::cerr << "Error: Could not link gstreamer elements." << std::endl;
+        std::cout << "Error: Could not link gstreamer elements." << std::endl;
         exit(1);
     }
-    // debugPrint("Gstreamer elements setup");
     cout << "Gstreamer elements setup successfully." << endl;
 }

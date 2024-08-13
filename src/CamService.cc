@@ -7,7 +7,7 @@ CamService::CamService(int* argc, char** argv[]) {
     makeDir(recordingDir.c_str());
     makeDir(recordingSaveDir.c_str());
     createListeningPipe();
-    recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, argc, argv);
+    recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
     running = false;
 }
 
@@ -32,27 +32,6 @@ void CamService::killMainLoop() {
 }
 
 /// private functions ///////////////////////////////////////////
-
-// void CamService::recordingLoop() {
-    
-//     currentVideoStartTime = now_steady();
-//     recordingPipeline->startPipeline();
-
-//     while(running) {
-//         std::this_thread::sleep_for(std::chrono::milliseconds(250));
-//         auto current_time = now_steady();
-//         auto dur = duration<std::chrono::seconds>(currentVideoStartTime, current_time);
-//         if(dur >= VIDEO_DURATION) {
-//             std::lock_guard<std::mutex> lock(recordingSwapMutex);
-//             recordingPipeline->stopPipeline();
-//             recordingPipeline->startPipeline();
-//             currentVideoStartTime = current_time;
-//         }
-//     }
-//     recordingPipeline->stopPipeline();
-//     safeToEndMainLoop = true;
-// }
-
 bool CamService::isRecording() {
     return recordingPipeline->pipelineRunning;
 }
