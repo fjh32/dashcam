@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     GstElement *source = gst_element_factory_make("libcamerasrc", "source");
     GstElement *videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
     GstElement *capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
-    GstElement *encoder = gst_element_factory_make("v4l2h264enc", "encoder");
+    GstElement *encoder = gst_element_factory_make("x264enc", "encoder");
     GstElement *muxer = gst_element_factory_make("mp4mux", "muxer");
     GstElement *sink = gst_element_factory_make("filesink", "sink");
 
