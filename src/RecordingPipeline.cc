@@ -131,14 +131,16 @@ void RecordingPipeline::setupGstElements() {
     #ifdef RPI_MODE
     debugPrint("Creating libcamerasrc source");
     gstData->source = gst_element_factory_make("libcamerasrc", "source");
+    gstData->encoder = gst_element_factory_make("v4l2h264enc", "encoder");
     #else
     debugPrint("Creating v4l2src source");
     gstData->source = gst_element_factory_make("v4l2src", "source");
+    gstData->encoder = gst_element_factory_make("x264enc", "encoder");
     #endif
     gstData->queue = gst_element_factory_make("queue", "queue");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
-    gstData->encoder = gst_element_factory_make("x264enc", "encoder");
+    
     gstData->muxer = gst_element_factory_make("matroskamux", "muxer");
     gstData->sink = gst_element_factory_make("splitmuxsink", "sink");
 
