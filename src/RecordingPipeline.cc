@@ -136,6 +136,7 @@ void RecordingPipeline::setupGstElements() {
     debugPrint("Creating v4l2src source");
     gstData->source = gst_element_factory_make("v4l2src", "source");
     gstData->encoder = gst_element_factory_make("x264enc", "encoder");
+    g_object_set(gstData->encoder, "key-int-max", FRAME_RATE, NULL);
     #endif
     gstData->queue = gst_element_factory_make("queue", "queue");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
@@ -160,7 +161,7 @@ void RecordingPipeline::setupGstElements() {
     g_object_set(gstData->capsfilter, "caps", caps, nullptr);
     gst_caps_unref(caps);
 
-    g_object_set(gstData->encoder, "key-int-max", FRAME_RATE, NULL);
+    
 
     g_object_set(gstData->sink, "muxer", gstData->muxer, NULL);
     g_object_set(gstData->sink, "max-size-time", (guint64)video_duration * GST_SECOND, NULL); // 30 minutes
