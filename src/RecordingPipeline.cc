@@ -1,6 +1,19 @@
-#include <GstRecordingPipeline.h>
+#include "RecordingPipeline.h"
+
 
 using namespace std;
+
+// callback function to create new filename for splitmuxsink
+static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointer user_data) {
+    // Get the instance from user_data
+    RecordingPipeline* instance = static_cast<RecordingPipeline*>(user_data);
+
+    string filepath = instance->recordingDir + "/output_" + formatted_time() + ".mkv";
+    instance->currentlyRecordingVideoName = filepath;
+
+    // Return the new filename (must be dynamically allocated since GStreamer will free it)
+    return g_strdup(filepath.c_str());
+}
 
 /// GstData class
 GstData::GstData() {
@@ -10,10 +23,10 @@ GstData::~GstData() {
     debugPrint("Destroying GstData object");
 }
 
-/// GstRecordingPipeline class
-GstRecordingPipeline::GstRecordingPipeline( const char dir[], int* argc, char** argv[]) 
-                            : recordingDir(dir), pipelineRunning(false), currentlyRecordingVideoName("None") {
-    debugPrint("Creating GstRecordingPipeline object");
+/// RecordingPipeline class
+RecordingPipeline::RecordingPipeline( const char dir[], int vid_duration, int* argc, char** argv[]) 
+                            : recordingDir(dir), video_duration(vid_duration), pipelineRunning(false), currentlyRecordingVideoName("None") {
+    debugPrint("Creating RecordingPipeline object");
     gst_init(argc, argv);
 
     makeDir(recordingDir.c_str());
@@ -22,8 +35,8 @@ GstRecordingPipeline::GstRecordingPipeline( const char dir[], int* argc, char** 
     setupGstElements();
 }
 
-GstRecordingPipeline::~GstRecordingPipeline() {
-    debugPrint("Destroying GstRecordingPipeline object");
+RecordingPipeline::~RecordingPipeline() {
+    debugPrint("Destroying RecordingPipeline object");
     if(pipelineRunning) {
         // Gstreamer needs explicit cleanup
         // need to explicitly call stopPipeline before the destructor is called
@@ -40,41 +53,42 @@ GstRecordingPipeline::~GstRecordingPipeline() {
     gst_object_unref(gstData->pipeline);
 }
 
-void GstRecordingPipeline::pipelineRunner() {
-    debugPrint("startPipeline()");
+void RecordingPipeline::pipelineRunner() {
+    debugPrint("startPipeline() at " + formatted_time());
 
     if(!pipelineRunning) {
         debugPrint("Starting pipeline");
 
-        setupNewVideoSink();
         gst_element_set_state(gstData->pipeline, GST_STATE_PLAYING);
         pipelineRunning = true;
 
         gstData->bus = gst_element_get_bus(gstData->pipeline);
         while(handleBusMessage(gstData->bus)) {}
-
         gst_object_unref(gstData->bus);
+
         pipelineRunning = false;
     }
 
     debugPrint("exiting startPipeline()");
 }
 
-void GstRecordingPipeline::startPipeline() {
-    pipelineThread = std::thread(&GstRecordingPipeline::pipelineRunner, this);
-    
+void RecordingPipeline::startPipeline() {
+    pipelineThread = std::thread(&RecordingPipeline::pipelineRunner, this);
 }
 
-void GstRecordingPipeline::stopPipeline() {
+void RecordingPipeline::createNewVideo() {
+    debugPrint("createNewVideo()");
+    g_signal_emit_by_name (gstData->sink, "split-now");
+    debugPrint("exiting createNewVideo()");
+}
+
+void RecordingPipeline::stopPipeline() {
     debugPrint("stopPipeline()");
 
     if(pipelineRunning) {
-        debugPrint("Stopping pipeline");
-        
         debugPrint("Sending EOS event");
         gst_element_send_event(gstData->pipeline, gst_event_new_eos());
         pipelineThread.join();
-        // while(pipelineRunning) {std::this_thread::sleep_for(std::chrono::milliseconds(100));}
         debugPrint("Setting pipeline state to NULL");
         gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
     }
@@ -82,10 +96,7 @@ void GstRecordingPipeline::stopPipeline() {
     debugPrint("exiting stopPipeline()");
 }
 
-
-// private /////////////////////////////////////////
-
-bool GstRecordingPipeline::handleBusMessage(GstBus *bus) {
+bool RecordingPipeline::handleBusMessage(GstBus *bus) {
     bool keepRunning = true;
     GstMessage *msg = gst_bus_timed_pop_filtered(bus, 100*GST_MSECOND, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
     if(msg) {
@@ -113,13 +124,8 @@ bool GstRecordingPipeline::handleBusMessage(GstBus *bus) {
     return keepRunning;
 }
 
-void GstRecordingPipeline::setupNewVideoSink() {
-    currentlyRecordingVideoName = make_new_video_name();
-    g_object_set(gstData->sink, "location", currentlyRecordingVideoName.c_str(), nullptr);
-    cout << "Recording to: " << currentlyRecordingVideoName << endl;
-}
 
-void GstRecordingPipeline::setupGstElements() {
+void RecordingPipeline::setupGstElements() {
     gstData->pipeline = gst_pipeline_new("recording_pipeline");
 
     #ifdef RPI_MODE
@@ -134,13 +140,14 @@ void GstRecordingPipeline::setupGstElements() {
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
     gstData->encoder = gst_element_factory_make("x264enc", "encoder");
     gstData->muxer = gst_element_factory_make("matroskamux", "muxer");
-    gstData->sink = gst_element_factory_make("filesink", "sink");
+    gstData->sink = gst_element_factory_make("splitmuxsink", "sink");
 
     if(!gstData->pipeline || !gstData->source || !gstData->queue || !gstData->capsfilter || !gstData->videoconvert || !gstData->encoder || !gstData->muxer || !gstData->sink) {
         cerr << "Failed to create elements\n";
         exit(1); // TODO: throw exception instead
     }
 
+    
     GstCaps *caps = gst_caps_new_simple(
         "video/x-raw",
         "format", G_TYPE_STRING, "YUY2",
@@ -151,13 +158,27 @@ void GstRecordingPipeline::setupGstElements() {
     g_object_set(gstData->capsfilter, "caps", caps, nullptr);
     gst_caps_unref(caps);
 
-    gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder, gstData->muxer, gstData->sink, NULL);
-    if(!gst_element_link_many(gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder, gstData->muxer, gstData->sink, NULL)) {
+    g_object_set(gstData->encoder, "key-int-max", FRAME_RATE, NULL);
+
+    g_object_set(gstData->sink, "muxer", gstData->muxer, NULL);
+    g_object_set(gstData->sink, "max-size-time", (guint64)video_duration * GST_SECOND, NULL); // 30 minutes
+    g_signal_connect(gstData->sink, "format-location", G_CALLBACK(make_new_filename), this);
+
+
+    // muxer already added to splitmuxsink, so don't add it to bin or link it
+    gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder,  gstData->sink, NULL);
+    if(!gst_element_link_many(gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder,  gstData->sink, NULL)) {
         std::cerr << "Error: Could not link gstreamer elements." << std::endl;
         exit(1);
     }
+
+    debugPrint("Gstreamer elements setup");
 }
 
-std::string GstRecordingPipeline::make_new_video_name() {
+std::string RecordingPipeline::make_new_video_name() {
     return recordingDir + "/output_" + formatted_time() + ".mkv";
+}
+
+gchar* RecordingPipeline::gst_create_new_video_name() {
+    return g_strdup(make_new_video_name().c_str());
 }

@@ -14,7 +14,7 @@ include_directories(${GST_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-add_executable( dashcam src/main.cc src/utilities.cc src/GstRecordingPipeline.cc src/CamService.cc)
+add_executable( dashcam src/main.cc src/utilities.cc src/RecordingPipeline.cc )
 
 if(RPI_MODE STREQUAL "ON")
     target_compile_definitions(dashcam PRIVATE RPI_MODE)
