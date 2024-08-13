@@ -80,8 +80,8 @@ int main(int argc, char *argv[]) {
         "video/x-raw",
         // "format", G_TYPE_STRING, "YUY2",
         "format", G_TYPE_STRING, "I420",
-        "width", G_TYPE_INT, 640,
-        "height", G_TYPE_INT, 480,
+        "width", G_TYPE_INT, 320,
+        "height", G_TYPE_INT, 240,
         "framerate", GST_TYPE_FRACTION, 10, 1,
         nullptr);
     g_object_set(capsfilter, "caps", caps, nullptr);
