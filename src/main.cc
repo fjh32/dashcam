@@ -77,8 +77,8 @@ int main(int argc, char *argv[]) {
     // g_object_set(source, "framerate", 30, NULL);
     GstCaps *caps = gst_caps_new_simple(
         "video/x-raw",
-        "format", G_TYPE_STRING, "YUY2",
-        // "format", G_TYPE_STRING, "I420",
+        // "format", G_TYPE_STRING, "YUY2",
+        "format", G_TYPE_STRING, "I420",
         "width", G_TYPE_INT, 640,
         "height", G_TYPE_INT, 480,
         "framerate", GST_TYPE_FRACTION, 10, 1,
