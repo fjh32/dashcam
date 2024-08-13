@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
     // Create GStreamer elements
     GstElement *pipeline = gst_pipeline_new("video-pipeline");
-    GstElement *source = gst_element_factory_make("libcamerasrc", "source");
+    GstElement *source = gst_element_factory_make("v4l2src", "source");
     GstElement *capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     GstElement *videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
     GstElement *encoder = gst_element_factory_make("v4l2h264enc", "encoder");
@@ -80,8 +80,8 @@ int main(int argc, char *argv[]) {
         "video/x-raw",
         // "format", G_TYPE_STRING, "YUY2",
         "format", G_TYPE_STRING, "I420",
-        "width", G_TYPE_INT, 320,
-        "height", G_TYPE_INT, 240,
+        "width", G_TYPE_INT, 640,
+        "height", G_TYPE_INT, 480,
         "framerate", GST_TYPE_FRACTION, 10, 1,
         nullptr);
     g_object_set(capsfilter, "caps", caps, nullptr);
