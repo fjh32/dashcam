@@ -6,10 +6,8 @@ CamService::CamService(int* argc, char** argv[]) {
     recordingSaveDir = RECORDING_SAVE_DIR;
     makeDir(recordingDir.c_str());
     makeDir(recordingSaveDir.c_str());
-    
     createListeningPipe();
-
-    gstRecordingPipeline = make_unique<GstRecordingPipeline>(RECORDING_DIR, argc, argv);
+    recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, argc, argv);
     running = false;
 }
 
@@ -18,9 +16,8 @@ CamService::~CamService() {
 }
 
 void CamService::mainLoop() {
-    safeToEndMainLoop = false;
     running = true;
-    recordingThread = std::thread(&CamService::recordingLoop, this);
+    recordingPipeline->startPipeline(); // non-blocking call
     cleanupThread = std::thread(&CamService::cleanupThreadLoop, this);
     listenOnPipe();
     cout << "Exiting main loop" << endl;
@@ -28,7 +25,7 @@ void CamService::mainLoop() {
 
 void CamService::killMainLoop() {
     running = false;
-    recordingThread.join();
+    recordingPipeline->stopPipeline();
     cleanupThread.join();
     removeListeningPipe();
     cout << "Exiting kill function" << endl;
@@ -36,28 +33,28 @@ void CamService::killMainLoop() {
 
 /// private functions ///////////////////////////////////////////
 
-void CamService::recordingLoop() {
+// void CamService::recordingLoop() {
     
-    currentVideoStartTime = now_steady();
-    gstRecordingPipeline->startPipeline();
+//     currentVideoStartTime = now_steady();
+//     recordingPipeline->startPipeline();
 
-    while(running) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(250));
-        auto current_time = now_steady();
-        auto dur = duration<std::chrono::seconds>(currentVideoStartTime, current_time);
-        if(dur >= VIDEO_DURATION) {
-            std::lock_guard<std::mutex> lock(recordingSwapMutex);
-            gstRecordingPipeline->stopPipeline();
-            gstRecordingPipeline->startPipeline();
-            currentVideoStartTime = current_time;
-        }
-    }
-    gstRecordingPipeline->stopPipeline();
-    safeToEndMainLoop = true;
-}
+//     while(running) {
+//         std::this_thread::sleep_for(std::chrono::milliseconds(250));
+//         auto current_time = now_steady();
+//         auto dur = duration<std::chrono::seconds>(currentVideoStartTime, current_time);
+//         if(dur >= VIDEO_DURATION) {
+//             std::lock_guard<std::mutex> lock(recordingSwapMutex);
+//             recordingPipeline->stopPipeline();
+//             recordingPipeline->startPipeline();
+//             currentVideoStartTime = current_time;
+//         }
+//     }
+//     recordingPipeline->stopPipeline();
+//     safeToEndMainLoop = true;
+// }
 
 bool CamService::isRecording() {
-    return gstRecordingPipeline->pipelineRunning;
+    return recordingPipeline->pipelineRunning;
 }
 
 
@@ -65,12 +62,10 @@ void CamService::saveRecordings(int seconds_back_to_save) {
     auto current_time = now();
     auto threshold_time = current_time - seconds_back_to_save;
     if(seconds_back_to_save <= VIDEO_DURATION) {
-        std::string filename = gstRecordingPipeline->currentlyRecordingVideoName;
+        std::string filename = recordingPipeline->currentlyRecordingVideoName;
         std::string baseFilename = filename.substr(filename.find_last_of("/\\") + 1);
         std::string savePath = recordingSaveDir + baseFilename;
-        std::lock_guard<std::mutex> lock(recordingSwapMutex);
-        gstRecordingPipeline->stopPipeline();
-        gstRecordingPipeline->startPipeline();
+        recordingPipeline->createNewVideo();
         std::filesystem::copy_file(filename, savePath, std::filesystem::copy_options::overwrite_existing);
         std::cout << "Saved file: " << savePath << std::endl;
 
@@ -81,10 +76,8 @@ void CamService::saveRecordings(int seconds_back_to_save) {
             if (file_timestamp > threshold_time) {
                     std::string filename = entry.path().filename().string();
 
-                    if (gstRecordingPipeline->currentlyRecordingVideoName.find(filename) != std::string::npos) {
-                        std::lock_guard<std::mutex> lock(recordingSwapMutex);
-                        gstRecordingPipeline->stopPipeline();
-                        gstRecordingPipeline->startPipeline();
+                    if (recordingPipeline->currentlyRecordingVideoName.find(filename) != std::string::npos) {
+                        recordingPipeline->createNewVideo();
                     }
 
                     std::string savePath = recordingSaveDir + filename;

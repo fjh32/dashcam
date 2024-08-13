@@ -5,27 +5,19 @@ using namespace std;
 
 // callback function to create new filename for splitmuxsink
 static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointer user_data) {
-    // Get the instance from user_data
     RecordingPipeline* instance = static_cast<RecordingPipeline*>(user_data);
-
     string filepath = instance->recordingDir + "/output_" + formatted_time() + ".mkv";
     instance->currentlyRecordingVideoName = filepath;
-
-    // Return the new filename (must be dynamically allocated since GStreamer will free it)
-    return g_strdup(filepath.c_str());
+    return g_strdup(filepath.c_str()); // Return the new filename (must be dynamically allocated since GStreamer will free it)
 }
 
 /// GstData class
-GstData::GstData() {
-    debugPrint("Creating GstData object");
-}
-GstData::~GstData() {
-    debugPrint("Destroying GstData object");
-}
+GstData::GstData() {}
+GstData::~GstData() {}
 
 /// RecordingPipeline class
-RecordingPipeline::RecordingPipeline( const char dir[], int vid_duration, int* argc, char** argv[]) 
-                            : recordingDir(dir), video_duration(vid_duration), pipelineRunning(false), currentlyRecordingVideoName("None") {
+RecordingPipeline::RecordingPipeline( const char dir[], int* argc, char** argv[]) 
+                            : recordingDir(dir), video_duration(VIDEO_DURATION), pipelineRunning(false), currentlyRecordingVideoName("None") {
     debugPrint("Creating RecordingPipeline object");
     gst_init(argc, argv);
 
@@ -77,9 +69,8 @@ void RecordingPipeline::startPipeline() {
 }
 
 void RecordingPipeline::createNewVideo() {
-    debugPrint("createNewVideo()");
+    debugPrint("Received createNewVideo() signal.");
     g_signal_emit_by_name (gstData->sink, "split-now");
-    debugPrint("exiting createNewVideo()");
 }
 
 void RecordingPipeline::stopPipeline() {
@@ -98,7 +89,7 @@ void RecordingPipeline::stopPipeline() {
 
 bool RecordingPipeline::handleBusMessage(GstBus *bus) {
     bool keepRunning = true;
-    GstMessage *msg = gst_bus_timed_pop_filtered(bus, 100*GST_MSECOND, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
+    GstMessage *msg = gst_bus_timed_pop_filtered(bus, 500*GST_MSECOND, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
     if(msg) {
         GError *err;
         gchar *debug_info;
@@ -124,13 +115,13 @@ bool RecordingPipeline::handleBusMessage(GstBus *bus) {
     return keepRunning;
 }
 
-
 void RecordingPipeline::setupGstElements() {
     gstData->pipeline = gst_pipeline_new("recording_pipeline");
 
     #ifdef RPI_MODE
     debugPrint("Creating libcamerasrc source");
     gstData->source = gst_element_factory_make("libcamerasrc", "source");
+    // gstData->source = gst_element_factory_make("v4l2src", "source");
     gstData->encoder = gst_element_factory_make("v4l2h264enc", "encoder");
     #else
     debugPrint("Creating v4l2src source");
@@ -141,7 +132,6 @@ void RecordingPipeline::setupGstElements() {
     gstData->queue = gst_element_factory_make("queue", "queue");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
-    
     gstData->muxer = gst_element_factory_make("matroskamux", "muxer");
     gstData->sink = gst_element_factory_make("splitmuxsink", "sink");
 
@@ -149,12 +139,10 @@ void RecordingPipeline::setupGstElements() {
         cerr << "Failed to create elements\n";
         exit(1); // TODO: throw exception instead
     }
-
     
     GstCaps *caps = gst_caps_new_simple(
         "video/x-raw",
         "format", G_TYPE_STRING, "YUY2",
-        // "format", G_TYPE_STRING, "I420",
         "width", G_TYPE_INT, VIDEO_WIDTH,
         "height", G_TYPE_INT, VIDEO_HEIGHT,
         "framerate", GST_TYPE_FRACTION, FRAME_RATE, 1,
@@ -162,12 +150,9 @@ void RecordingPipeline::setupGstElements() {
     g_object_set(gstData->capsfilter, "caps", caps, nullptr);
     gst_caps_unref(caps);
 
-    
-
     g_object_set(gstData->sink, "muxer", gstData->muxer, NULL);
     g_object_set(gstData->sink, "max-size-time", (guint64)video_duration * GST_SECOND, NULL); // 30 minutes
     g_signal_connect(gstData->sink, "format-location", G_CALLBACK(make_new_filename), this);
-
 
     // muxer already added to splitmuxsink, so don't add it to bin or link it
     gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder,  gstData->sink, NULL);
@@ -175,14 +160,6 @@ void RecordingPipeline::setupGstElements() {
         std::cerr << "Error: Could not link gstreamer elements." << std::endl;
         exit(1);
     }
-
-    debugPrint("Gstreamer elements setup");
-}
-
-std::string RecordingPipeline::make_new_video_name() {
-    return recordingDir + "/output_" + formatted_time() + ".mkv";
-}
-
-gchar* RecordingPipeline::gst_create_new_video_name() {
-    return g_strdup(make_new_video_name().c_str());
+    // debugPrint("Gstreamer elements setup");
+    cout << "Gstreamer elements setup successfully." << endl;
 }

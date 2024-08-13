@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GstRecordingPipeline.h"
+#include "RecordingPipeline.h"
 
 #include <string>
 #include <iostream>
@@ -39,14 +39,11 @@ class CamService {
         void killMainLoop();
     private:
         bool running;
-        std::unique_ptr<GstRecordingPipeline> gstRecordingPipeline;
+        std::unique_ptr<RecordingPipeline> recordingPipeline;
         std::mutex recordingSwapMutex;
         std::chrono::_V2::steady_clock::time_point currentVideoStartTime;
-        std::thread recordingThread;
         std::thread cleanupThread;
         string recordingSaveDir, recordingDir;
-
-        bool safeToEndMainLoop;
 
         void recordingLoop();
         void createListeningPipe();
