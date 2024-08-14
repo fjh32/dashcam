@@ -143,7 +143,11 @@ void RecordingPipeline::setupGstElements() {
     
     GstCaps *caps = gst_caps_new_simple(
         "video/x-raw",
+        #ifdef RPI_MODE
+        "format", G_TYPE_STRING, "NV12",
+        #else
         "format", G_TYPE_STRING, "YUY2",
+        #endif
         "width", G_TYPE_INT, VIDEO_WIDTH,
         "height", G_TYPE_INT, VIDEO_HEIGHT,
         "framerate", GST_TYPE_FRACTION, FRAME_RATE, 1,
