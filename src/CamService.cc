@@ -16,6 +16,8 @@ CamService::~CamService() {
 }
 
 void CamService::mainLoop() {
+    cout << "Starting CamService::mainLoop() at " << formatted_time() << endl;
+
     running = true;
     recordingPipeline->startPipeline(); // non-blocking call
     cleanupThread = std::thread(&CamService::cleanupThreadLoop, this);
@@ -28,7 +30,7 @@ void CamService::killMainLoop() {
     recordingPipeline->stopPipeline();
     cleanupThread.join();
     removeListeningPipe();
-    cout << "Exiting kill function" << endl;
+    cout << "Killed CamService at " << formatted_time() << endl;
 }
 
 /// private functions ///////////////////////////////////////////
@@ -112,7 +114,6 @@ void CamService::listenOnPipe() {
         }
         else if (std::regex_match(receivedMessage, match, saveRegex)) {
             int value = std::stoi(match[1].str());
-            std::cout << "Received save command with value: " << value << std::endl;
             saveRecordings(value);
         }
         pipe.close(); // close the pipe after reading

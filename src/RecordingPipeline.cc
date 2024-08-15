@@ -122,14 +122,13 @@ void RecordingPipeline::setupGstElements() {
     #ifdef RPI_MODE
     debugPrint("Creating libcamerasrc source");
     gstData->source = gst_element_factory_make("libcamerasrc", "source");
-    // gstData->source = gst_element_factory_make("v4l2src", "source");
-    gstData->encoder = gst_element_factory_make("v4l2h264enc", "encoder");
+    // gstData->encoder = gst_element_factory_make("v4l2h264enc", "encoder");
     #else
     debugPrint("Creating v4l2src source");
     gstData->source = gst_element_factory_make("v4l2src", "source");
-    gstData->encoder = gst_element_factory_make("x264enc", "encoder");
-    g_object_set(gstData->encoder, "key-int-max", FRAME_RATE, NULL);
     #endif
+    gstData->encoder = gst_element_factory_make("x264enc", "encoder");
+    
     gstData->queue = gst_element_factory_make("queue", "queue");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
@@ -141,13 +140,15 @@ void RecordingPipeline::setupGstElements() {
         exit(1); // TODO: throw exception instead
     }
     
+    g_object_set(gstData->encoder, "key-int-max", FRAME_RATE, NULL); // set keyframe interval to framerate
+
     GstCaps *caps = gst_caps_new_simple(
         "video/x-raw",
-        #ifdef RPI_MODE
-        "format", G_TYPE_STRING, "NV12",
-        #else
+        // #ifdef RPI_MODE
+        // "format", G_TYPE_STRING, "NV12",
+        // #else
         "format", G_TYPE_STRING, "YUY2",
-        #endif
+        // #endif
         "width", G_TYPE_INT, VIDEO_WIDTH,
         "height", G_TYPE_INT, VIDEO_HEIGHT,
         "framerate", GST_TYPE_FRACTION, FRAME_RATE, 1,
