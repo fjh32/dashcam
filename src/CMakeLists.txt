@@ -3,29 +3,19 @@ project(dashcam)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Add your source files here
 set(SOURCES
     utilities.cc
-    BluetoothServer.cc
-    CamRecorder.cc
-    CameraRecorder.cc
-    NetStreamServer.cc
+    GstRecordingPipeline.cc
+    CamService.cc
     main.cc
-    
-    # Add more source files here
 )
 
-# Add your header files here
 set(HEADERS
     utilities.h
-    BluetoothServer.h
-    CamRecorder.h
-    CameraRecorder.h
-    NetStreamServer.h
-    # Add header files here
+    RecordingPipeline.h
+    CamService.h
 )
 
-# Add any additional libraries or dependencies here
 set(LIBRARIES
     # Add libraries here
 )

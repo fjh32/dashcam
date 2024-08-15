@@ -1,2 +1,6 @@
 recordings/
 *build/*
+*.mkv
+*.mp4
+*.log
+*.csv

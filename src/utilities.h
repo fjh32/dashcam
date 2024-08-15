@@ -17,6 +17,8 @@ std::string formatted_time();
 std::string format_time(const char * time_format);
 std::time_t time_t_from_direntry(std::filesystem::directory_entry dir_entry);
 
+void debugPrint(std::string message);
+
 template <typename T,typename L = std::chrono::_V2::steady_clock::time_point>
 int64_t duration(L start, L end) {
     if(end < start) {
@@ -26,3 +28,5 @@ int64_t duration(L start, L end) {
     }
     return std::chrono::duration_cast<T>(end - start).count();
 }
+
+void makeDir(const char * dir);

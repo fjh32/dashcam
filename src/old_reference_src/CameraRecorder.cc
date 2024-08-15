@@ -16,6 +16,7 @@ GstData::~GstData() {
 CameraRecorder::CameraRecorder(int argc, char* argv[]) {
     isRecording = false;
     killed = false;
+    pipelineRunning = false;
     recordingDir = RECORDING_DIR;
     recordingSaveDir = RECORDING_SAVE_DIR;
     setupGstElements(argc, argv);
@@ -26,14 +27,14 @@ CameraRecorder::CameraRecorder(int argc, char* argv[]) {
 }
 
 CameraRecorder::~CameraRecorder() {
+
     // Add destructor code here
     #ifdef DEBUG
     std::cout << "Destructor called for Camera Recorder" << std::endl;
     #endif
 
-    if(!killed) {
-        kill();
-    }
+    kill();
+
     gst_object_unref(gstData->pipeline);
 }
 
@@ -41,21 +42,25 @@ void CameraRecorder::mainLoop() {
     recordingThread = std::thread(&CameraRecorder::startRecording, this);
     cleanupThread = std::thread(&CameraRecorder::cleanupThreadLoop, this);
     listenOnPipe();
+    // while(true)
+    // {
+    //     std::this_thread::sleep_for(std::chrono::seconds(1));
+    // }
 }
 
 void CameraRecorder::startRecording() {
     std::cout << "Starting Recording Loop\n";
 
-    ////  Test out start/stop
+    // //  Test out start/stop
     // pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
     // std::this_thread::sleep_for(std::chrono::seconds(5));
     // stopPipeline();
-    ///////////////////////
+    // /////////////////////
     
     isRecording = true;
     pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
     while(isRecording) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
         auto current_time = now_steady();
         auto dur = duration<std::chrono::seconds>(currentVideoStartTime, current_time);
         if(dur >= VIDEO_DURATION) {
@@ -63,7 +68,7 @@ void CameraRecorder::startRecording() {
             stopPipeline();
             pipelineThread = std::thread(&CameraRecorder::startPipeline, this);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        
     }
     
     std::cout << "Exiting recordingLoop()" << std::endl;
@@ -73,26 +78,24 @@ void CameraRecorder::startPipeline() {
     #ifdef DEBUG
     std::cout << "startPipeline()\n";
     #endif
-
+    
     currentlyRecordingVideoName = makeNewFilename();
     g_object_set(gstData->sink, "location", currentlyRecordingVideoName.c_str(), NULL);
     std::cout << "Recording to file: " << currentlyRecordingVideoName << std::endl;
     gst_element_set_state(gstData->pipeline, GST_STATE_PLAYING);
-
+    pipelineRunning = true;
     currentVideoStartTime = now_steady();
     gstData->bus = gst_element_get_bus(gstData->pipeline);
     while (true) {
         GstMessage *msg = gst_bus_timed_pop_filtered(gstData->bus, GST_CLOCK_TIME_NONE, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
         if (msg != nullptr) {
             if(handleBusMessage(msg)) {
-                
+                gst_message_unref(msg);
                 break;
             }
         }
         gst_message_unref(msg);
     }
-    
-    gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
     gst_object_unref(gstData->bus);
     #ifdef DEBUG
     std::cout << "EXITING startPipeline()." << std::endl;
@@ -100,27 +103,89 @@ void CameraRecorder::startPipeline() {
 }
 
 void CameraRecorder::stopPipeline() {
-    // Add code here
     std::cout << "stopPipeline(): Stopping recording" << std::endl;
-    
+
+    // Send EOS event
     gst_element_send_event(gstData->pipeline, gst_event_new_eos());
-    pipelineThread.join();
-    
+
+    // Wait for the pipeline thread to finish
+    if (pipelineThread.joinable()) {
+        pipelineThread.join();
+    }
+    std::cout << "stopPipeline(): Pipeline thread joined" << std::endl;
+
+    // Wait for EOS message
+    GstBus *bus = gst_element_get_bus(gstData->pipeline);
+    GstMessage *msg = gst_bus_timed_pop_filtered(bus, 10*GST_SECOND, (GstMessageType)(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
+    if (msg != nullptr) {
+        gst_message_unref(msg);
+    }
+    gst_object_unref(bus);
+
+    // Move pipeline directly to NULL state
+    std::cout << "DOWN TO NULL STATE\n";
+    GstStateChangeReturn ret = gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+    if (ret == GST_STATE_CHANGE_ASYNC) {
+        std::cout << "Waiting for pipeline to stop\n";
+        GstState state;
+        ret = gst_element_get_state(gstData->pipeline, &state, NULL, GST_CLOCK_TIME_NONE);
+        if (ret == GST_STATE_CHANGE_FAILURE) {
+            std::cerr << "Error: Could not stop pipeline" << std::endl;
+            exit(1);
+        }
+    }
+
+    pipelineRunning = false;
+
     std::cout << "stopPipeline(): Recording stopped" << std::endl;
+}
+
+
+bool CameraRecorder::handleBusMessage(GstMessage *msg) {
+    // Add code here
+    bool eosSwitch = false;
+    switch (GST_MESSAGE_TYPE(msg)) {
+        case GST_MESSAGE_ERROR: {
+            GError *err;
+            gchar *debug_info;
+            gst_message_parse_error(msg, &err, &debug_info);
+            g_printerr("Error received from element %s: %s\n", GST_OBJECT_NAME(msg->src), err->message);
+            g_printerr("Debugging information: %s\n", debug_info ? debug_info : "none");
+            g_clear_error(&err);
+            g_free(debug_info);
+            // gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+            eosSwitch = true;
+            break;
+        }
+        case GST_MESSAGE_EOS:
+            g_print("End-Of-Stream reached.\n");
+            eosSwitch = true;
+            break;
+        default:
+            g_print("Unexpected message received.\n");
+            break;
+    }
+    // gst_message_unref(msg);
+    return eosSwitch;
 }
 
 void CameraRecorder::kill() {
     std::cout<< "starting kill(): Killing entire thing" << std::endl;
-    stopPipeline();
-    isRecording = false;
-    recordingThread.join();
-    cleanupThread.join();
-    removeListeningPipe();
-    killed = true;
+    if(pipelineRunning) {
+        stopPipeline();
+    }
+
+    if(!killed) {
+        // stopPipeline();
+        isRecording = false;
+        recordingThread.join();
+        cleanupThread.join();
+        removeListeningPipe();
+        killed = true;
+    }
 
     std::cout << "ending kill(): Recording loop killed" << std::endl;
 }
-
 
 void CameraRecorder::saveRecordings(int seconds_back_to_save) {
     auto current_time = now();
@@ -166,18 +231,27 @@ void CameraRecorder::setupGstElements(int argc, char* argv[]) {
 
     gstData->pipeline = gst_pipeline_new("recording_pipeline");
 
+    #ifndef RPI_MODE
     gstData->source = gst_element_factory_make("v4l2src", "source");
-    g_object_set(gstData->source, "device", "/dev/video0", NULL);
+    #else
+    std::cout << "rpi libcamera src mode\n";
+    gstData->source = gst_element_factory_make("libcamerasrc", "source");
+    #endif
+
+    //g_object_set(gstData->source, "device", "/dev/video0", NULL);
     gstData->queue = gst_element_factory_make("queue", "queue_thread");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
+
     #ifdef RPI_MODE
-    gstData->encoder = gst_element_factory_make("omxh264enc", "encoder");
+    gstData->encoder = gst_element_factory_make("x264enc", "encoder");
     std::cout << "Using omxh264enc for RPI_MODE" << std::endl;
     #else
     gstData->encoder = gst_element_factory_make("x264enc", "encoder");
     std::cout << "Using x264enc. NOT RPI_MODE" << std::endl;
     #endif
+
+
     gstData->muxer = gst_element_factory_make("matroskamux", "mux");
     gstData->sink = gst_element_factory_make("filesink", "sink");
 
@@ -204,32 +278,7 @@ void CameraRecorder::setupGstElements(int argc, char* argv[]) {
     }
 }
 
-bool CameraRecorder::handleBusMessage(GstMessage *msg) {
-    // Add code here
-    bool eosSwitch = false;
-    switch (GST_MESSAGE_TYPE(msg)) {
-        case GST_MESSAGE_ERROR: {
-            GError *err;
-            gchar *debug_info;
-            gst_message_parse_error(msg, &err, &debug_info);
-            g_printerr("Error received from element %s: %s\n", GST_OBJECT_NAME(msg->src), err->message);
-            g_printerr("Debugging information: %s\n", debug_info ? debug_info : "none");
-            g_clear_error(&err);
-            g_free(debug_info);
-            gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
-            eosSwitch = true;
-            break;
-        }
-        case GST_MESSAGE_EOS:
-            g_print("End-Of-Stream reached.\n");
-            eosSwitch = true;
-            break;
-        default:
-            break;
-    }
-    gst_message_unref(msg);
-    return eosSwitch;
-}
+
 
 void CameraRecorder::createListeningPipe() {
     // Add createListeningPipe code here

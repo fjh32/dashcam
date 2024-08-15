@@ -3,7 +3,11 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/src",
+                "/usr/include/gstreamer-1.0",
+                "/home/frank/Code/dashcam/src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",
