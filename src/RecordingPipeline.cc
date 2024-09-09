@@ -132,10 +132,12 @@ void RecordingPipeline::setupGstElements() {
     gstData->queue = gst_element_factory_make("queue", "queue");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
-    gstData->muxer = gst_element_factory_make("matroskamux", "muxer");
-    gstData->sink = gst_element_factory_make("splitmuxsink", "sink");
 
-    if(!gstData->pipeline || !gstData->source || !gstData->queue || !gstData->capsfilter || !gstData->videoconvert || !gstData->encoder || !gstData->muxer || !gstData->sink) {
+    gstData->tee = gst_element_factory_make ("tee", "tee");
+
+
+
+    if(!gstData->pipeline || !gstData->source || !gstData->queue || !gstData->capsfilter || !gstData->videoconvert || !gstData->encoder || !gstData->muxer || !gstData->tee) {
         cout << "Failed to create elements\n";
         exit(1); // TODO: throw exception instead
     }
@@ -156,15 +158,52 @@ void RecordingPipeline::setupGstElements() {
     g_object_set(gstData->capsfilter, "caps", caps, nullptr);
     gst_caps_unref(caps);
 
+    // muxer already added to splitmuxsink, so don't add it to bin or link it
+    gst_bin_add_many(GST_BIN(gstData->pipeline), 
+                            gstData->source, 
+                            gstData->queue, 
+                            gstData->capsfilter, 
+                            gstData->videoconvert, 
+                            gstData->encoder,  
+                            // gstData->sink, 
+                            gstData->tee, 
+                            NULL);
+    if(!gst_element_link_many(gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder,  gstData->tee, NULL)) {
+        std::cout << "Error: Could not link gstreamer elements." << std::endl;
+        exit(1);
+    }
+
+    setupFileSinkElements();
+
+    cout << "Gstreamer elements setup successfully." << endl;
+}
+
+void RecordingPipeline::setupFileSinkElements() {
+    gstData->file_sink_queue = gst_element_factory_make("queue", "file_sink_queue");
+    gstData->muxer = gst_element_factory_make("matroskamux", "muxer");
+    gstData->sink = gst_element_factory_make("splitmuxsink", "sink");
+    
     g_object_set(gstData->sink, "muxer", gstData->muxer, NULL);
     g_object_set(gstData->sink, "max-size-time", (guint64)video_duration * GST_SECOND, NULL); // 30 minutes
     g_signal_connect(gstData->sink, "format-location", G_CALLBACK(make_new_filename), this);
 
-    // muxer already added to splitmuxsink, so don't add it to bin or link it
-    gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder,  gstData->sink, NULL);
-    if(!gst_element_link_many(gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder,  gstData->sink, NULL)) {
+    gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->file_sink_queue, gstData->sink, NULL);
+    if(!gst_element_link_many(gstData->file_sink_queue, gstData->sink, NULL)) {
         std::cout << "Error: Could not link gstreamer elements." << std::endl;
         exit(1);
     }
-    cout << "Gstreamer elements setup successfully." << endl;
+
+    // link tee to file_sink_queue
+    GstPad *tee_video_pad = gst_element_request_pad_simple (gstData->tee, "src_%u");
+    GstPad *queue_video_pad = gst_element_get_static_pad (gstData->file_sink_queue, "sink");
+    if (gst_pad_link (tee_video_pad, queue_video_pad) != GST_PAD_LINK_OK) {
+        std::cout << "Error: Could not link tee and queue pads." << std::endl;
+        exit(1);
+    }
+
+    // gst_element_release_request_pad (gstData->tee, tee_video_pad);
+    gst_object_unref(tee_video_pad);
+}
+
+void RecordingPipeline::setupHlsElements() {
 }

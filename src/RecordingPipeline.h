@@ -26,7 +26,8 @@ class GstData {
     public:
         GstData();
         ~GstData();
-        GstElement *pipeline, *source, *queue, *capsfilter, *videoconvert, *encoder, *muxer, *sink;
+        GstElement *pipeline, *source, *queue, *capsfilter, *videoconvert, *encoder, *muxer, *file_sink_queue, *sink;
+        GstElement *tee, *hls_queue, *hls2_sink;
         GstBus *bus;
 };
 
@@ -52,4 +53,6 @@ class RecordingPipeline {
         void pipelineRunner();
         bool handleBusMessage(GstBus *bus);
         void setupGstElements();
+        void setupHlsElements();
+        void setupFileSinkElements();
 };
