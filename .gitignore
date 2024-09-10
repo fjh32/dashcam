@@ -4,3 +4,6 @@ recordings/
 *.mp4
 *.log
 *.csv
+log*
+testing_flask_*
+uploads*

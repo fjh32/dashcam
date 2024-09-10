@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(SOURCES
     utilities.cc
-    GstRecordingPipeline.cc
+    RecordingPipeline.cc
+    HttpServer.cc
     CamService.cc
     main.cc
 )
@@ -13,6 +14,7 @@ set(SOURCES
 set(HEADERS
     utilities.h
     RecordingPipeline.h
+    HttpServer.h
     CamService.h
 )
 

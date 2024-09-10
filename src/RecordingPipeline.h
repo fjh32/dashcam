@@ -20,6 +20,8 @@ using namespace std;
 #define VIDEO_HEIGHT 480
 #define FRAME_RATE 10
 
+#define HLS_FILE_ROOT "/home/frank/livestream/"
+
 static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointer user_data);
 
 class GstData {
@@ -27,7 +29,7 @@ class GstData {
         GstData();
         ~GstData();
         GstElement *pipeline, *source, *queue, *capsfilter, *videoconvert, *encoder, *muxer, *file_sink_queue, *sink;
-        GstElement *tee, *hls_queue, *hls2_sink;
+        GstElement *tee, *hls_queue, *h264parse, *hlssink;
         GstBus *bus;
 };
 

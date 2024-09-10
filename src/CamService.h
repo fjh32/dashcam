@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RecordingPipeline.h"
+#include "HttpServer.h"
 
 #include <string>
 #include <iostream>
@@ -44,6 +45,8 @@ class CamService {
         std::chrono::_V2::steady_clock::time_point currentVideoStartTime;
         std::thread cleanupThread;
         string recordingSaveDir, recordingDir;
+
+        unique_ptr<HttpServer> httpServer;
 
         void recordingLoop();
         void createListeningPipe();

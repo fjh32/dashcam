@@ -9,6 +9,7 @@ CamService::CamService(int* argc, char** argv[]) {
     createListeningPipe();
     recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
     running = false;
+    httpServer = make_unique<HttpServer>(RECORDING_DIR, 8888);
 }
 
 CamService::~CamService() {
@@ -21,6 +22,7 @@ void CamService::mainLoop() {
     running = true;
     recordingPipeline->startPipeline(); // non-blocking call
     cleanupThread = std::thread(&CamService::cleanupThreadLoop, this);
+    httpServer->startHttpServer();
     listenOnPipe();
     cout << "Exiting main loop" << endl;
 }

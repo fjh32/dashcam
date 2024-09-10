@@ -54,6 +54,7 @@ void RecordingPipeline::pipelineRunner() {
 
         gst_element_set_state(gstData->pipeline, GST_STATE_PLAYING);
         pipelineRunning = true;
+        
 
         gstData->bus = gst_element_get_bus(gstData->pipeline);
         while(handleBusMessage(gstData->bus)) {}
@@ -174,6 +175,7 @@ void RecordingPipeline::setupGstElements() {
     }
 
     setupFileSinkElements();
+    setupHlsElements();
 
     cout << "Gstreamer elements setup successfully." << endl;
 }
@@ -196,14 +198,71 @@ void RecordingPipeline::setupFileSinkElements() {
     // link tee to file_sink_queue
     GstPad *tee_video_pad = gst_element_request_pad_simple (gstData->tee, "src_%u");
     GstPad *queue_video_pad = gst_element_get_static_pad (gstData->file_sink_queue, "sink");
-    if (gst_pad_link (tee_video_pad, queue_video_pad) != GST_PAD_LINK_OK) {
-        std::cout << "Error: Could not link tee and queue pads." << std::endl;
+    if (gst_pad_can_link(tee_video_pad, queue_video_pad)) {
+        if (gst_pad_link(tee_video_pad, queue_video_pad) != GST_PAD_LINK_OK) {
+            std::cout << "Error: Could not link tee and queue pads." << std::endl;
+            exit(1);
+        }
+    } else {
+        std::cout << "Error: Tee and queue pads are not compatible." << std::endl;
         exit(1);
     }
 
     // gst_element_release_request_pad (gstData->tee, tee_video_pad);
     gst_object_unref(tee_video_pad);
+    gst_object_unref(queue_video_pad);
+    debugPrint("File sink elements setup successfully.");
 }
-
 void RecordingPipeline::setupHlsElements() {
+    gstData->hls_queue = gst_element_factory_make("queue", "hls_queue");
+    gstData->h264parse = gst_element_factory_make("h264parse", "h264parse");
+    gstData->hlssink = gst_element_factory_make("hlssink2", "hlssink");
+
+    if (!gstData->hls_queue || !gstData->h264parse || !gstData->hlssink) {
+        std::cout << "Error: Failed to create HLS elements." << std::endl;
+        exit(1);
+    }
+
+    // TODO configurable location
+    // Configure hlssink2 properties
+    if (!std::filesystem::exists(HLS_FILE_ROOT)) {
+        std::filesystem::create_directory(HLS_FILE_ROOT);
+    }
+    std::string livestream_location = recordingDir + "/" + "livestream.m3u8";
+    std::string segment_location = recordingDir + "/" + "segment%05d.ts";
+
+    g_object_set(G_OBJECT(gstData->hlssink),
+                "playlist-length", 5,              // Reduced from 5
+                "target-duration", 5,              // Reduced from 10
+                "max-files", 5,
+                "playlist-location", livestream_location.c_str(),
+                "location", segment_location.c_str(),
+                 NULL);
+
+    // Add elements to the pipeline
+    gst_bin_add_many(GST_BIN(gstData->pipeline),
+                     gstData->hls_queue,
+                     gstData->h264parse,
+                     gstData->hlssink,
+                     NULL);
+
+    // Link the elements
+    if (!gst_element_link_many(gstData->hls_queue, gstData->h264parse, gstData->hlssink, NULL)) {
+        std::cout << "Error: Could not link HLS elements." << std::endl;
+        exit(1);
+    }
+
+    // Link tee to hls_queue
+    GstPad *tee_hls_pad = gst_element_request_pad_simple(gstData->tee, "src_%u");
+    GstPad *queue_hls_pad = gst_element_get_static_pad(gstData->hls_queue, "sink");
+
+    if (gst_pad_link(tee_hls_pad, queue_hls_pad) != GST_PAD_LINK_OK) {
+        std::cout << "Error: Could not link tee and HLS queue pads." << std::endl;
+        exit(1);
+    }
+
+    gst_object_unref(queue_hls_pad);
+    gst_object_unref(tee_hls_pad);
+
+    std::cout << "HLS elements setup successfully." << std::endl;
 }
