@@ -11,6 +11,7 @@ void HttpServer::startHttpServer() {
         drogon::app().disableSigtermHandling();
         // Configure Drogon to serve the directory statically
         // drogon::app().registerFilter(std::make_shared<CookieChecker>());
+        configureCORS(drogon::app());
         drogon::app().setDocumentRoot(directoryPath_);
         drogon::app().setFileTypes({"gif",
                                     "png",
@@ -35,6 +36,7 @@ void HttpServer::startHttpServer() {
                                                         AdviceCallback &&ac, 
                                                         AdviceChainCallback &&acc) {
             const auto& cookie = req->getCookie("coconut");
+            return acc();
             if (cookie.empty()) {
                 // If the cookie is not present, return a 403 Forbidden response
                 auto resp = drogon::HttpResponse::newHttpResponse();
@@ -48,7 +50,28 @@ void HttpServer::startHttpServer() {
             }
         });
 
-        
+        drogon::app().registerHandler("/livestream.m3u8", 
+                                        [this](const drogon::HttpRequestPtr& req,
+                                        std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
+            auto resp = drogon::HttpResponse::newFileResponse(this->directoryPath_ + "/livestream.m3u8");
+            resp->addHeader("Content-Type", "application/vnd.apple.mpegurl");
+            // resp->addHeader("Content-Type", "audio/mpegurl");
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+            callback(resp);
+        });
+
+        // Handler for .ts files
+        drogon::app().registerHandler("/segment{}.ts", 
+                                        [this](const drogon::HttpRequestPtr& req,
+                                        std::function<void (const drogon::HttpResponsePtr &)> &&callback,
+                                        const std::string &segment) {
+            auto resp = drogon::HttpResponse::newFileResponse(this->directoryPath_ + "/segment" + segment + ".ts");
+            resp->addHeader("Content-Type", "video/mp2t");
+            // resp->addHeader("Content-Type", "application/octet-stream");
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+            callback(resp);
+        });
+
         drogon::app().run();
     });
     serverThread_.detach();
@@ -61,4 +84,32 @@ HttpServer::~HttpServer() {
         serverThread_.join();
     }
     debugPrint("HTTP server stopped");
+}
+
+
+
+void HttpServer::configureCORS(drogon::HttpAppFramework& app) {
+    app.registerPostHandlingAdvice(
+        [](const drogon::HttpRequestPtr&,
+           const drogon::HttpResponsePtr& resp) {
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+            resp->addHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+            resp->addHeader("Access-Control-Allow-Headers", "Origin, Content-Type, Accept");
+            resp->addHeader("Access-Control-Max-Age", "3600");
+        }
+    );
+
+    // Handle OPTIONS requests for CORS preflight
+    app.registerHandler(
+        "/your/hls/path/.*",
+        [](const drogon::HttpRequestPtr& req,
+           std::function<void(const drogon::HttpResponsePtr&)>&& callback) {
+            auto resp = drogon::HttpResponse::newHttpResponse();
+            if (req->getMethod() == drogon::HttpMethod::Options) {
+                resp->setStatusCode(drogon::HttpStatusCode::k204NoContent);
+            }
+            callback(resp);
+        },
+        {drogon::Get, drogon::Options}
+    );
 }

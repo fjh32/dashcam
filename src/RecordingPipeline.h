@@ -1,6 +1,8 @@
 #pragma once
 
 #include <gst/gst.h>
+#include <gst/video/video-format.h>
+
 #include <string>
 #include <iostream>
 #include <sys/stat.h>
@@ -29,7 +31,7 @@ class GstData {
         GstData();
         ~GstData();
         GstElement *pipeline, *source, *queue, *capsfilter, *videoconvert, *encoder, *muxer, *file_sink_queue, *sink;
-        GstElement *tee, *hls_queue, *h264parse, *hlssink;
+        GstElement *tee, *hls_queue, *h264parse, *hlsmux, *hlssink;
         GstBus *bus;
 };
 

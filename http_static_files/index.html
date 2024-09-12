@@ -1,15 +1,133 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Dashcam Recordings</title>
-    <link rel="stylesheet" type="text/css" href="/css/main.css">
-    <script src="/js/main.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom HLS H.264 Stream Player (Updated)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.10/hls.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #video {
+            max-width: 100%;
+            max-height: 70vh;
+        }
+        #play-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #error-message {
+            color: red;
+            margin-top: 20px;
+        }
+    </style>
 </head>
-<body>
-    <h1>Hello World from dashcam</h1>
-    
-    <!-- Your content goes here -->
-<!-- Your content goes here -->
+body>
+    <video id="video" controls></video>
+    <button id="play-button">Play Stream</button>
+    <div id="error-message"></div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var video = document.getElementById('video');
+        var playButton = document.getElementById('play-button');
+        var errorMessage = document.getElementById('error-message');
+        var streamUrl = 'https://ripplein.space/livestream.m3u8';
+        var hls;
 
+        function displayError(message) {
+            errorMessage.textContent = 'Error: ' + message;
+            console.error(message);
+        }
+
+        function initializePlayer() {
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    debug: true,
+                    xhrSetup: function(xhr, url) {
+                        console.log('Loading URL:', url);
+                    },
+                    capLevelToPlayerSize: true,
+                    maxBufferSize: 30 * 1000 * 1000, // 30 MB
+                    maxBufferLength: 30, // 30 seconds
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90,
+                    manifestLoadingTimeOut: 20000,
+                    manifestLoadingMaxRetryTimeout: 64000,
+                    levelLoadingTimeOut: 20000,
+                    levelLoadingMaxRetryTimeout: 64000,
+                    fragLoadingMaxRetry: 6,
+                    fragLoadingRetryDelay: 1000,
+                    fragLoadingMaxRetryTimeout: 64000,
+                    startLevel: -1,
+                    defaultAudioCodec: undefined,
+                    abrEwmaFastLive: 3,
+                    abrEwmaSlowLive: 9,
+                    abrMaxWithRealBitrate: true,
+                    progressive: false,
+                    forceKeyFrameOnDiscontinuity: true,
+                    appendErrorMaxRetry: 3,
+                    testBandwidth: true,
+                    debug: false
+                });
+
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    console.log('Manifest parsed, ready to play');
+                });
+
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                displayError('Network error: ' + data.details);
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                displayError('Media error: ' + data.details);
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                displayError('Unrecoverable error: ' + data.details);
+                                hls.destroy();
+                                break;
+                        }
+                    } else {
+                        console.warn('Non-fatal error occurred: ', data);
+                    }
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = streamUrl;
+            } else {
+                displayError('Your browser does not support HLS playback');
+            }
+        }
+
+        playButton.addEventListener('click', function() {
+            if (!hls && !video.src) {
+                initializePlayer();
+            }
+            video.play().catch(function(error) {
+                displayError('Playback error: ' + error.message);
+            });
+        });
+
+        video.addEventListener('error', function() {
+            displayError('Video playback error: ' + video.error.message);
+        });
+    });
+    </script>
 </body>
 </html>

@@ -147,8 +147,8 @@ void CamService::deleteOlderFiles(std::time_t threshold_time) {
     auto dir_contents = getRecordingDirContents();
     for(auto &entry : dir_contents) {
         std::time_t file_timestamp = time_t_from_direntry(entry);
-
-        if (file_timestamp < threshold_time) {
+	string filename = entry.path().string();
+        if ((file_timestamp < threshold_time) && filename.find(".mkv") != std::string::npos) {
             std::filesystem::remove(entry);
             std::cout << "Cleaned up file: " << entry.path().filename().string() << std::endl;
         }

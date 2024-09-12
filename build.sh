@@ -22,8 +22,8 @@ fi
 mkdir -p $DIR
 mkdir -p $RECORDINGS_DIR
 cp -r http_static_files/* $RECORDINGS_DIR
-rm $RECORDINGS_DIR/*.ts
-rm $RECORDINGS_DIR/*.m3u8
+#rm $RECORDINGS_DIR/*.ts
+#rm $RECORDINGS_DIR/*.m3u8
 cd $DIR
 cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRPI_MODE=$RPI_MODE ..
 make

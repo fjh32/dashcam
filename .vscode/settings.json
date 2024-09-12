@@ -71,6 +71,9 @@
         "variant": "cpp",
         "bitset": "cpp",
         "codecvt": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "coroutine": "cpp",
+        "unordered_set": "cpp",
+        "future": "cpp"
     }
 }

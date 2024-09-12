@@ -12,6 +12,7 @@ class HttpServer {
         HttpServer(const std::string &directory, uint16_t port);
         void startHttpServer();
         ~HttpServer();
+        void configureCORS(drogon::HttpAppFramework& app);
 
     private:
         std::string directoryPath_; // Directory to be served

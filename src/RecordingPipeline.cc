@@ -142,15 +142,29 @@ void RecordingPipeline::setupGstElements() {
         cout << "Failed to create elements\n";
         exit(1); // TODO: throw exception instead
     }
+
+
+    g_object_set(G_OBJECT(gstData->source),
+    "format", GST_VIDEO_FORMAT_NV12,  // This sets 4:2:0 format
+    NULL);
     
-    g_object_set(gstData->encoder, "key-int-max", FRAME_RATE, NULL); // set keyframe interval to framerate
+    // g_object_set(gstData->encoder, "key-int-max", FRAME_RATE, NULL); // set keyframe interval to framerate
+    g_object_set(G_OBJECT(gstData->encoder),
+        "tune", 0x00000004,  // zerolatency
+        "speed-preset", 1,   // ultrafast
+        "bitrate", 2000,     // Adjust based on your needs
+        "key-int-max", FRAME_RATE,  // GOP size, adjust if needed
+        "profile", 2,        // Change to main profile (2) instead of baseline (1)
+        "level", 31,         // Set to Level 3.1 (compatible with most devices)
+            // "chroma-format", 1,  // Force 4:2:0 chroma subsampling
+        NULL);
 
     GstCaps *caps = gst_caps_new_simple(
         "video/x-raw",
         // #ifdef RPI_MODE
-        // "format", G_TYPE_STRING, "NV12",
+        "format", G_TYPE_STRING, "NV12",
         // #else
-        "format", G_TYPE_STRING, "YUY2",
+        // "format", G_TYPE_STRING, "YUY2",
         // #endif
         "width", G_TYPE_INT, VIDEO_WIDTH,
         "height", G_TYPE_INT, VIDEO_HEIGHT,
@@ -216,9 +230,10 @@ void RecordingPipeline::setupFileSinkElements() {
 void RecordingPipeline::setupHlsElements() {
     gstData->hls_queue = gst_element_factory_make("queue", "hls_queue");
     gstData->h264parse = gst_element_factory_make("h264parse", "h264parse");
-    gstData->hlssink = gst_element_factory_make("hlssink2", "hlssink");
+    gstData->hlsmux = gst_element_factory_make("mpegtsmux", "hlsmux");
+    gstData->hlssink = gst_element_factory_make("hlssink", "hlssink");
 
-    if (!gstData->hls_queue || !gstData->h264parse || !gstData->hlssink) {
+    if (!gstData->hls_queue || !gstData->h264parse || !gstData->hlsmux || !gstData->hlssink) {
         std::cout << "Error: Failed to create HLS elements." << std::endl;
         exit(1);
     }
@@ -231,23 +246,43 @@ void RecordingPipeline::setupHlsElements() {
     std::string livestream_location = recordingDir + "/" + "livestream.m3u8";
     std::string segment_location = recordingDir + "/" + "segment%05d.ts";
 
+    // g_object_set(G_OBJECT(gstData->hlsmux),
+    //             "segment-duration", "VP9",
+    //             NULL);
+
+    g_object_set(G_OBJECT(gstData->h264parse),
+                "config-interval", -1,
+                // "output-format", 2,
+                NULL);
+
     g_object_set(G_OBJECT(gstData->hlssink),
-                "playlist-length", 5,              // Reduced from 5
-                "target-duration", 5,              // Reduced from 10
-                "max-files", 5,
+                // "playlist-length", 5,              // Reduced from 5
+                // "target-duration", 5,              // Reduced from 10
+                // "max-files", 5,
                 "playlist-location", livestream_location.c_str(),
                 "location", segment_location.c_str(),
+                "target-duration", 4,
+                "playlist-length", 5,
+                "max-files", 10,
+                "playlist-root", "https://ripplein.space/",
+                "dynamic", TRUE,
+                "disable-hls-cache", TRUE,
+                "program-date-time", TRUE,
+                
                  NULL);
+
+    
 
     // Add elements to the pipeline
     gst_bin_add_many(GST_BIN(gstData->pipeline),
-                     gstData->hls_queue,
-                     gstData->h264parse,
-                     gstData->hlssink,
-                     NULL);
+                    gstData->hls_queue,
+                    gstData->h264parse,
+                    gstData->hlsmux,    
+                    gstData->hlssink,
+                    NULL);
 
     // Link the elements
-    if (!gst_element_link_many(gstData->hls_queue, gstData->h264parse, gstData->hlssink, NULL)) {
+    if (!gst_element_link_many(gstData->hls_queue, gstData->h264parse, gstData->hlsmux, gstData->hlssink, NULL)) {
         std::cout << "Error: Could not link HLS elements." << std::endl;
         exit(1);
     }
