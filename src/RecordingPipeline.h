@@ -17,10 +17,15 @@
 
 using namespace std;
 
-
+#ifdef DEBUG
 #define VIDEO_WIDTH 640
 #define VIDEO_HEIGHT 480
 #define FRAME_RATE 10
+#else
+#define VIDEO_WIDTH 1280
+#define VIDEO_HEIGHT 720
+#define FRAME_RATE 15
+#endif
 
 #define HLS_FILE_ROOT "/home/frank/livestream/"
 

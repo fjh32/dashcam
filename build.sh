@@ -3,6 +3,8 @@ if [[ "$1" == "--release" || "$1" == "-r" ]]; then
     BUILD_TYPE="Release"
     DIR=release_build/
     RECORDINGS_DIR=/home/frank/recordings/
+    mkdir -p ~/dashcam_web_static
+    cp -r dashcam_web_static/* ~/dashcam_web_static
     rm -rf $DIR
 else
     echo "Not release mode"
@@ -21,9 +23,8 @@ fi
 
 mkdir -p $DIR
 mkdir -p $RECORDINGS_DIR
-cp -r http_static_files/* $RECORDINGS_DIR
-#rm $RECORDINGS_DIR/*.ts
-#rm $RECORDINGS_DIR/*.m3u8
+rm $RECORDINGS_DIR/*.ts
+rm $RECORDINGS_DIR/*.m3u8
 cd $DIR
 cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DRPI_MODE=$RPI_MODE ..
 make

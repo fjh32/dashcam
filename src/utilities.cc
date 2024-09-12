@@ -59,3 +59,12 @@ void makeDir(const char * dir) {
         }
     }
 }
+
+void get_website_root() {
+    // #ifdef DEBUG
+    // std::cout << "Website root: " << WEBSITE_ROOT << std::endl;
+    // #endif
+    // #ifdef RELEASE
+    // std::cout << "Website root: " << WEBSITE_ROOT << std::endl; 
+    // #endif
+}

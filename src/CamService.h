@@ -21,11 +21,17 @@ using namespace std;
 
 #ifdef DEBUG
 #define VIDEO_DURATION 300 
+#define WEB_DIR "./dashcam_web_static/"
+#define WEB_PORT 8888
+#define WEBSITE_ROOT "192.168.1.70"
 #define RECORDING_DIR "./recordings/"
 #define RECORDING_SAVE_DIR "./recordings/save/"
 #define DELETE_OLDER_THAN 600 
 #else
 #define VIDEO_DURATION  1800 
+#define WEB_DIR "./dashcam_web_static/"
+#define WEB_PORT 8888
+#define WEBSITE_ROOT "https://ripplein.space/"
 #define RECORDING_DIR "/home/recordings/"
 #define RECORDING_SAVE_DIR "/home/recordings/save/"
 #define DELETE_OLDER_THAN 86400

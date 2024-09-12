@@ -9,7 +9,7 @@ CamService::CamService(int* argc, char** argv[]) {
     createListeningPipe();
     recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
     running = false;
-    httpServer = make_unique<HttpServer>(RECORDING_DIR, 8888);
+    httpServer = make_unique<HttpServer>(RECORDING_DIR, WEB_DIR, WEB_PORT);
 }
 
 CamService::~CamService() {
@@ -18,11 +18,10 @@ CamService::~CamService() {
 
 void CamService::mainLoop() {
     cout << "Starting CamService::mainLoop() at " << formatted_time() << endl;
-
     running = true;
     recordingPipeline->startPipeline(); // non-blocking call
+    httpServer->startHttpServer(); // non-blocking call
     cleanupThread = std::thread(&CamService::cleanupThreadLoop, this);
-    httpServer->startHttpServer();
     listenOnPipe();
     cout << "Exiting main loop" << endl;
 }
@@ -39,7 +38,6 @@ void CamService::killMainLoop() {
 bool CamService::isRecording() {
     return recordingPipeline->pipelineRunning;
 }
-
 
 void CamService::saveRecordings(int seconds_back_to_save) {
     auto current_time = now();
@@ -66,7 +64,7 @@ void CamService::saveRecordings(int seconds_back_to_save) {
                     std::string savePath = recordingSaveDir + filename;
                     std::filesystem::copy_file(entry.path(), savePath, std::filesystem::copy_options::overwrite_existing);
                     std::cout << "Saved file: " << filename << std::endl;
-                }
+            }
         }
     }
 }
@@ -95,42 +93,36 @@ void CamService::removeListeningPipe() {
 
 void CamService::listenOnPipe() {
     debugPrint("Starting listenOnPipe()");
-
     std::string receivedMessage;
     std::regex saveRegex("save:(\\d+)");
 
-    while(1) {
+    while(running) {
         std::ifstream pipe(PIPE_NAME);
         if (!pipe) {
             std::cerr << "Error opening named pipe: " << strerror(errno) << std::endl;
             exit(1);
         }
-
         std::getline(pipe, receivedMessage); // blocking read on pipe
         std::cout << "Received message on pipe: " << receivedMessage << std::endl;
-
         std::smatch match;
         if (receivedMessage == "kill") {
             killMainLoop();
             break;
         }
-        else if (std::regex_match(receivedMessage, match, saveRegex)) {
+        else if (std::regex_match(receivedMessage, match, saveRegex)) { // save:<seconds to save>
             int value = std::stoi(match[1].str());
             saveRecordings(value);
         }
         pipe.close(); // close the pipe after reading
     }
-
     debugPrint("Closing listenOnPipe()");
 }
 
 void CamService::cleanupThreadLoop() {
     debugPrint("Starting cleanupThreadLoop()");
-
     time_t start_time = now();
     std::time_t threshold_time = start_time - DELETE_OLDER_THAN;
     while(running) {
-
         time_t current_time = now();
         auto diff = current_time - start_time;
         if (diff > VIDEO_DURATION) {

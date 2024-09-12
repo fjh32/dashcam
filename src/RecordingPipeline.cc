@@ -54,8 +54,6 @@ void RecordingPipeline::pipelineRunner() {
 
         gst_element_set_state(gstData->pipeline, GST_STATE_PLAYING);
         pipelineRunning = true;
-        
-
         gstData->bus = gst_element_get_bus(gstData->pipeline);
         while(handleBusMessage(gstData->bus)) {}
         gst_object_unref(gstData->bus);
@@ -129,11 +127,9 @@ void RecordingPipeline::setupGstElements() {
     gstData->source = gst_element_factory_make("v4l2src", "source");
     #endif
     gstData->encoder = gst_element_factory_make("x264enc", "encoder");
-    
     gstData->queue = gst_element_factory_make("queue", "queue");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
-
     gstData->tee = gst_element_factory_make ("tee", "tee");
 
 
@@ -156,16 +152,12 @@ void RecordingPipeline::setupGstElements() {
         "key-int-max", FRAME_RATE,  // GOP size, adjust if needed
         "profile", 2,        // Change to main profile (2) instead of baseline (1)
         "level", 31,         // Set to Level 3.1 (compatible with most devices)
-            // "chroma-format", 1,  // Force 4:2:0 chroma subsampling
         NULL);
 
     GstCaps *caps = gst_caps_new_simple(
         "video/x-raw",
-        // #ifdef RPI_MODE
         "format", G_TYPE_STRING, "NV12",
-        // #else
         // "format", G_TYPE_STRING, "YUY2",
-        // #endif
         "width", G_TYPE_INT, VIDEO_WIDTH,
         "height", G_TYPE_INT, VIDEO_HEIGHT,
         "framerate", GST_TYPE_FRACTION, FRAME_RATE, 1,
@@ -261,7 +253,7 @@ void RecordingPipeline::setupHlsElements() {
                 // "max-files", 5,
                 "playlist-location", livestream_location.c_str(),
                 "location", segment_location.c_str(),
-                "target-duration", 4,
+                "target-duration", 3,
                 "playlist-length", 5,
                 "max-files", 10,
                 "playlist-root", "https://ripplein.space/",

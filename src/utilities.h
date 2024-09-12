@@ -30,3 +30,5 @@ int64_t duration(L start, L end) {
 }
 
 void makeDir(const char * dir);
+
+void get_website_root();

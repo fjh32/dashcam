@@ -1,0 +1,25 @@
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+#video {
+    max-width: 100%;
+    max-height: 70vh;
+}
+#play-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+#error-message {
+    color: red;
+    margin-top: 20px;
+}

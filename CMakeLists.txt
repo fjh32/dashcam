@@ -17,7 +17,7 @@ find_package(Drogon REQUIRED)
 
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+
 add_executable( dashcam src/main.cc src/utilities.cc src/RecordingPipeline.cc src/HttpServer.cc src/CamService.cc)
 
 if(RPI_MODE STREQUAL "ON")
@@ -26,6 +26,7 @@ endif()
 
 if(NOT CMAKE_BUILD_TYPE OR NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_definitions(DEBUG)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wall -Wextra -Wpedantic")
     # target_compile_definitions(dashcam PRIVATE DEBUG )
 endif()
 
