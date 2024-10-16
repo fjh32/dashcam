@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var video = document.getElementById('video');
     var playButton = document.getElementById('play-button');
     var errorMessage = document.getElementById('error-message');
-    var streamUrl = 'https://ripplein.space/livestream.m3u8';
+    // var streamUrl = 'https://ripplein.space/livestream.m3u8';
+    var streamUrl = 'http://192.168.1.71:8888/livestream.m3u8';
     var hls;
 
     function displayError(message) {

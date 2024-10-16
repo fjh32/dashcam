@@ -75,5 +75,6 @@
         "coroutine": "cpp",
         "unordered_set": "cpp",
         "future": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

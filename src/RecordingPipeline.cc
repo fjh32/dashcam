@@ -115,13 +115,12 @@ bool RecordingPipeline::handleBusMessage(GstBus *bus) {
     return keepRunning;
 }
 
-void RecordingPipeline::setupGstElements() {
+void RecordingPipeline::setupSoftwareEncodingRecorder() {
     gstData->pipeline = gst_pipeline_new("recording_pipeline");
 
     #ifdef RPI_MODE
     debugPrint("Creating libcamerasrc source");
     gstData->source = gst_element_factory_make("libcamerasrc", "source");
-    // gstData->encoder = gst_element_factory_make("v4l2h264enc", "encoder");
     #else
     debugPrint("Creating v4l2src source");
     gstData->source = gst_element_factory_make("v4l2src", "source");
@@ -132,13 +131,10 @@ void RecordingPipeline::setupGstElements() {
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
     gstData->tee = gst_element_factory_make ("tee", "tee");
 
-
-
     if(!gstData->pipeline || !gstData->source || !gstData->queue || !gstData->capsfilter || !gstData->videoconvert || !gstData->encoder || !gstData->muxer || !gstData->tee) {
         cout << "Failed to create elements\n";
         exit(1); // TODO: throw exception instead
     }
-
 
     g_object_set(G_OBJECT(gstData->source),
     "format", GST_VIDEO_FORMAT_NV12,  // This sets 4:2:0 format
@@ -179,10 +175,72 @@ void RecordingPipeline::setupGstElements() {
         std::cout << "Error: Could not link gstreamer elements." << std::endl;
         exit(1);
     }
+}
 
+void RecordingPipeline::setupHardwareEncodingRecorder() {
+    debugPrint("Setting up RPI ZERO HARDWARE ENCODING pipeline");
+
+    gstData->pipeline = gst_pipeline_new("recording_pipeline");
+
+
+    gstData->source = gst_element_factory_make("libcamerasrc", "source");
+    gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
+    gstData->videoconvert = gst_element_factory_make("v4l2convert", "videoconvert");
+    gstData->encoder = gst_element_factory_make("v4l2h264enc", "encoder");
+    gstData->post_encode_caps = gst_element_factory_make("capsfilter", "post_encode_caps");
+    gstData->h264parser = gst_element_factory_make("h264parse", "h264parser");
+    gstData->tee = gst_element_factory_make ("tee", "tee");
+
+    if(!gstData->pipeline || !gstData->source || !gstData->capsfilter || !gstData->videoconvert || !gstData->encoder || !gstData->post_encode_caps || !gstData->h264parser || !gstData->tee) {
+        cout << "Failed to create elements\n";
+        exit(1); // TODO: throw exception instead
+    }
+
+    ///////////// Encoder properties
+    GstStructure *extra_controls = gst_structure_from_string("controls,repeat_sequence_header=1", NULL);
+    if (extra_controls) {
+        g_object_set(G_OBJECT(gstData->encoder), "extra-controls", extra_controls, NULL);
+        gst_structure_free(extra_controls);
+    } else {
+        g_printerr("Failed to set extra-controls on v4l2h264enc.");
+    }
+    /////////////////////////////////
+
+    //////////// Caps filters
+    g_object_set(G_OBJECT(gstData->capsfilter), "caps", gst_caps_from_string("video/x-raw,width=1280,height=720,format=NV12"), NULL);
+
+    g_object_set(G_OBJECT(gstData->post_encode_caps), "caps", gst_caps_from_string("video/x-h264,level=(string)4"), NULL);
+    /////////////////////////////////
+
+    gst_bin_add_many(GST_BIN(gstData->pipeline), 
+                            gstData->source, 
+                            gstData->capsfilter, 
+                            gstData->videoconvert, 
+                            gstData->encoder,
+                            gstData->post_encode_caps,
+                            gstData->h264parser, 
+                            gstData->tee, 
+                            NULL);
+
+    bool link_status = gst_element_link_many(gstData->source, gstData->capsfilter, gstData->videoconvert, gstData->encoder, gstData->post_encode_caps, gstData->h264parser, gstData->tee, NULL);
+
+    if (!link_status) {
+        std::cout << "Error: Could not link gstreamer elements in RPI ZERO PIPELINE." << std::endl;
+        exit(1);
+    }
+}
+
+void RecordingPipeline::setupGstElements() {
+    #ifndef RPI_ZERO_MODE
+    setupSoftwareEncodingRecorder();
+    #else
+    setupHardwareEncodingRecorder();
+    #endif
     setupFileSinkElements();
     setupHlsElements();
-
+    #ifndef RPI_ZERO_MODE
+    
+    #endif
     cout << "Gstreamer elements setup successfully." << endl;
 }
 
@@ -256,7 +314,8 @@ void RecordingPipeline::setupHlsElements() {
                 "target-duration", 3,
                 "playlist-length", 5,
                 "max-files", 10,
-                "playlist-root", "https://ripplein.space/",
+                // "playlist-root", "https://ripplein.space/",
+                "playlist-root", "http://192.168.1.71:8888/",
                 "dynamic", TRUE,
                 "disable-hls-cache", TRUE,
                 "program-date-time", TRUE,

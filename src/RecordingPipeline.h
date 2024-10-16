@@ -35,8 +35,11 @@ class GstData {
     public:
         GstData();
         ~GstData();
-        GstElement *pipeline, *source, *queue, *capsfilter, *videoconvert, *encoder, *muxer, *file_sink_queue, *sink;
-        GstElement *tee, *hls_queue, *h264parse, *hlsmux, *hlssink;
+        GstElement *pipeline; 
+        GstElement *source, *queue, *capsfilter, *videoconvert, *encoder, *tee; 
+        GstElement *post_encode_caps, *h264parser;
+        GstElement *muxer, *file_sink_queue, *sink;
+        GstElement  *hls_queue, *h264parse, *hlsmux, *hlssink;
         GstBus *bus;
 };
 
@@ -64,4 +67,6 @@ class RecordingPipeline {
         void setupGstElements();
         void setupHlsElements();
         void setupFileSinkElements();
+        void setupSoftwareEncodingRecorder();
+        void setupHardwareEncodingRecorder();
 };

@@ -23,3 +23,5 @@ gst-launch-1.0 libcamerasrc ! capsfilter caps=video/x-raw,width=1280,height=720,
 
 
 gst-launch-1.0 libcamerasrc ! capsfilter caps=video/x-raw,width=1280,height=720,format=NV12 ! v4l2convert ! v4l2h264enc extra-controls="controls,repeat_sequence_header=1" ! 'video/x-h264,level=(string)4' ! h264parse ! matroskamux ! filesink location=test.mkv
+
+//g++ -o video_pipeline test_pipeline.cc `pkg-config --cflags --libs gstreamer-1.0`

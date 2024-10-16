@@ -20,7 +20,7 @@ void HttpServer::runServer() {
     drogon::app().disableSigtermHandling();
     drogon::app().setDocumentRoot(web_static_dir_);
     drogon::app().addListener("0.0.0.0", port_);
-    register_middleware();
+    // register_middleware();
     register_handlers();
     drogon::app().run();
 }
