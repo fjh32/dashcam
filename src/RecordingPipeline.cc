@@ -116,6 +116,7 @@ bool RecordingPipeline::handleBusMessage(GstBus *bus) {
 }
 
 void RecordingPipeline::setupSoftwareEncodingRecorder() {
+    debugPrint("Setting up SOFTWARE ENCODING pipeline");
     gstData->pipeline = gst_pipeline_new("recording_pipeline");
 
     #ifdef RPI_MODE
@@ -125,22 +126,30 @@ void RecordingPipeline::setupSoftwareEncodingRecorder() {
     debugPrint("Creating v4l2src source");
     gstData->source = gst_element_factory_make("v4l2src", "source");
     #endif
+
     gstData->encoder = gst_element_factory_make("x264enc", "encoder");
     gstData->queue = gst_element_factory_make("queue", "queue");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
+    gstData->h264parser = gst_element_factory_make("h264parse", "h264parser");
     gstData->tee = gst_element_factory_make ("tee", "tee");
 
-    if(!gstData->pipeline || !gstData->source || !gstData->queue || !gstData->capsfilter || !gstData->videoconvert || !gstData->encoder || !gstData->muxer || !gstData->tee) {
+    if(!gstData->pipeline || 
+        !gstData->source || 
+        !gstData->queue || 
+        !gstData->capsfilter || 
+        !gstData->videoconvert || 
+        !gstData->encoder || 
+        !gstData->h264parser || 
+        !gstData->tee) {
         cout << "Failed to create elements\n";
         exit(1); // TODO: throw exception instead
     }
 
-    g_object_set(G_OBJECT(gstData->source),
-    "format", GST_VIDEO_FORMAT_NV12,  // This sets 4:2:0 format
-    NULL);
+    // g_object_set(G_OBJECT(gstData->source),
+    // "format", GST_VIDEO_FORMAT_NV12,  // This sets 4:2:0 format
+    // NULL);
     
-    // g_object_set(gstData->encoder, "key-int-max", FRAME_RATE, NULL); // set keyframe interval to framerate
     g_object_set(G_OBJECT(gstData->encoder),
         "tune", 0x00000004,  // zerolatency
         "speed-preset", 1,   // ultrafast
@@ -161,17 +170,22 @@ void RecordingPipeline::setupSoftwareEncodingRecorder() {
     g_object_set(gstData->capsfilter, "caps", caps, nullptr);
     gst_caps_unref(caps);
 
-    // muxer already added to splitmuxsink, so don't add it to bin or link it
     gst_bin_add_many(GST_BIN(gstData->pipeline), 
                             gstData->source, 
                             gstData->queue, 
                             gstData->capsfilter, 
                             gstData->videoconvert, 
                             gstData->encoder,  
-                            // gstData->sink, 
+                            gstData->h264parser,
                             gstData->tee, 
                             NULL);
-    if(!gst_element_link_many(gstData->source, gstData->queue, gstData->capsfilter, gstData->videoconvert, gstData->encoder,  gstData->tee, NULL)) {
+    if(!gst_element_link_many(gstData->source, 
+                                gstData->queue, 
+                                gstData->capsfilter, 
+                                gstData->videoconvert, 
+                                gstData->encoder, 
+                                gstData->h264parser, 
+                                gstData->tee, NULL)) {
         std::cout << "Error: Could not link gstreamer elements." << std::endl;
         exit(1);
     }
@@ -181,7 +195,6 @@ void RecordingPipeline::setupHardwareEncodingRecorder() {
     debugPrint("Setting up RPI ZERO HARDWARE ENCODING pipeline");
 
     gstData->pipeline = gst_pipeline_new("recording_pipeline");
-
 
     gstData->source = gst_element_factory_make("libcamerasrc", "source");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
@@ -222,7 +235,13 @@ void RecordingPipeline::setupHardwareEncodingRecorder() {
                             gstData->tee, 
                             NULL);
 
-    bool link_status = gst_element_link_many(gstData->source, gstData->capsfilter, gstData->videoconvert, gstData->encoder, gstData->post_encode_caps, gstData->h264parser, gstData->tee, NULL);
+    bool link_status = gst_element_link_many(gstData->source, 
+                                                gstData->capsfilter, 
+                                                gstData->videoconvert, 
+                                                gstData->encoder, 
+                                                gstData->post_encode_caps, 
+                                                gstData->h264parser, 
+                                                gstData->tee, NULL);
 
     if (!link_status) {
         std::cout << "Error: Could not link gstreamer elements in RPI ZERO PIPELINE." << std::endl;
@@ -236,11 +255,10 @@ void RecordingPipeline::setupGstElements() {
     #else
     setupHardwareEncodingRecorder();
     #endif
+
     setupFileSinkElements();
     setupHlsElements();
-    #ifndef RPI_ZERO_MODE
-    
-    #endif
+
     cout << "Gstreamer elements setup successfully." << endl;
 }
 
@@ -283,32 +301,27 @@ void RecordingPipeline::setupHlsElements() {
     gstData->hlsmux = gst_element_factory_make("mpegtsmux", "hlsmux");
     gstData->hlssink = gst_element_factory_make("hlssink", "hlssink");
 
-    if (!gstData->hls_queue || !gstData->h264parse || !gstData->hlsmux || !gstData->hlssink) {
+    if (!gstData->hls_queue 
+        || !gstData->h264parse
+        || !gstData->hlsmux 
+        || !gstData->hlssink) {
         std::cout << "Error: Failed to create HLS elements." << std::endl;
         exit(1);
     }
 
-    // TODO configurable location
-    // Configure hlssink2 properties
     if (!std::filesystem::exists(HLS_FILE_ROOT)) {
         std::filesystem::create_directory(HLS_FILE_ROOT);
     }
     std::string livestream_location = recordingDir + "/" + "livestream.m3u8";
     std::string segment_location = recordingDir + "/" + "segment%05d.ts";
 
-    // g_object_set(G_OBJECT(gstData->hlsmux),
-    //             "segment-duration", "VP9",
-    //             NULL);
-
+    // config interval -1 means no config frame and IS NECESSARY
     g_object_set(G_OBJECT(gstData->h264parse),
                 "config-interval", -1,
                 // "output-format", 2,
                 NULL);
 
     g_object_set(G_OBJECT(gstData->hlssink),
-                // "playlist-length", 5,              // Reduced from 5
-                // "target-duration", 5,              // Reduced from 10
-                // "max-files", 5,
                 "playlist-location", livestream_location.c_str(),
                 "location", segment_location.c_str(),
                 "target-duration", 3,
@@ -319,7 +332,6 @@ void RecordingPipeline::setupHlsElements() {
                 "dynamic", TRUE,
                 "disable-hls-cache", TRUE,
                 "program-date-time", TRUE,
-                
                  NULL);
 
     
@@ -333,7 +345,10 @@ void RecordingPipeline::setupHlsElements() {
                     NULL);
 
     // Link the elements
-    if (!gst_element_link_many(gstData->hls_queue, gstData->h264parse, gstData->hlsmux, gstData->hlssink, NULL)) {
+    if (!gst_element_link_many(gstData->hls_queue, 
+                                gstData->h264parse,
+                                gstData->hlsmux, 
+                                gstData->hlssink, NULL)) {
         std::cout << "Error: Could not link HLS elements." << std::endl;
         exit(1);
     }
