@@ -22,7 +22,10 @@ add_executable( dashcam src/main.cc src/utilities.cc src/RecordingPipeline.cc sr
 
 if(RPI_MODE STREQUAL "ON")
     target_compile_definitions(dashcam PRIVATE RPI_MODE)
+elseif(RPI_MODE STREQUAL "ZERO")
+    target_compile_definitions(dashcam PRIVATE RPI_ZERO_MODE)
 endif()
+
 
 if(NOT CMAKE_BUILD_TYPE OR NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_definitions(DEBUG)

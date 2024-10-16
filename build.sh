@@ -16,6 +16,9 @@ fi
 if [[ "$2" == "-rpi" ]]; then
     echo "Raspberry Pi mode"
     RPI_MODE="ON"
+elif [[ "$2" == "-rpi0" ]]; then
+    echo "Raspberry Pi Zero mode with Hardware Acceleration"
+    RPI_MODE="ZERO"
 else
     echo "Not Raspberry Pi mode"
     RPI_MODE="OFF"
