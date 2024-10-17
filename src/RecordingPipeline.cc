@@ -324,7 +324,7 @@ void RecordingPipeline::setupHlsElements() {
     g_object_set(G_OBJECT(gstData->hlssink),
                 "playlist-location", livestream_location.c_str(),
                 "location", segment_location.c_str(),
-                "target-duration", 3,
+                "target-duration", 4,
                 "playlist-length", 5,
                 "max-files", 10,
                 // "playlist-root", "https://ripplein.space/",
