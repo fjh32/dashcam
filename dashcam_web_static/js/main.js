@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var playButton = document.getElementById('play-button');
     var errorMessage = document.getElementById('error-message');
     // var streamUrl = 'https://ripplein.space/livestream.m3u8';
-    var streamUrl = 'http://192.168.1.71:8888/livestream.m3u8';
+    var streamUrl = 'http://10.0.0.1:8888/livestream.m3u8';
     var hls;
 
     function displayError(message) {

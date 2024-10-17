@@ -328,7 +328,7 @@ void RecordingPipeline::setupHlsElements() {
                 "playlist-length", 5,
                 "max-files", 10,
                 // "playlist-root", "https://ripplein.space/",
-                "playlist-root", "http://192.168.1.71:8888/",
+                "playlist-root", "http://10.0.0.1:8888/",
                 "dynamic", TRUE,
                 "disable-hls-cache", TRUE,
                 "program-date-time", TRUE,
