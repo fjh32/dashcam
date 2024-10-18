@@ -78,6 +78,18 @@ void HttpServer::register_handlers() {
         resp->addHeader("Access-Control-Allow-Origin", "*");
         callback(resp);
     });
+
+    drogon::app().registerHandler("/shutdown_cam_service",
+                                    [this](const drogon::HttpRequestPtr& req,
+                                    std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
+        // Shutdown the CamService;
+        //  /tmp/camrecorder.pipe
+        std::ofstream pipeFile("/tmp/camrecorder.pipe");
+        std::cout << "HTTP REQUEST ON /shutdown_cam_service. Sending kill message to CamService pipe." << std::endl;
+        pipeFile << "kill" << std::endl;
+        pipeFile.close();
+        callback(drogon::HttpResponse::newHttpResponse());
+    }); 
 }
 
 HttpServer::~HttpServer() {
