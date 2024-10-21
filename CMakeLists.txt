@@ -20,7 +20,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 add_executable( dashcam src/main.cc src/utilities.cc src/RecordingPipeline.cc src/HttpServer.cc src/CamService.cc)
 
-if(RPI_MODE STREQUAL "ON")
+if(RPI_MODE STREQUAL "RPI")
     target_compile_definitions(dashcam PRIVATE RPI_MODE)
 elseif(RPI_MODE STREQUAL "ZERO")
     target_compile_definitions(dashcam PRIVATE RPI_ZERO_MODE)

@@ -85,11 +85,52 @@ void HttpServer::register_handlers() {
         // Shutdown the CamService;
         //  /tmp/camrecorder.pipe
         std::ofstream pipeFile("/tmp/camrecorder.pipe");
-        std::cout << "HTTP REQUEST ON /shutdown_cam_service. Sending kill message to CamService pipe." << std::endl;
+        std::cout << "HTTP REQUEST ON /shutdown_cam_service. Sending kill message to CamService pipe in 1 second." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
         pipeFile << "kill" << std::endl;
         pipeFile.close();
         callback(drogon::HttpResponse::newHttpResponse());
-    }); 
+    });
+
+    drogon::app().registerHandler("/recording_list",
+    [this](const drogon::HttpRequestPtr& req,
+    std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
+        // std::string response = "<html><head><title>Recordings</title></head><body><h1>Recordings</h1><ul>";
+        std::vector<std::filesystem::directory_entry> dir_contents = getDirContents(this->recordingsPath_);
+        dir_contents.erase(std::remove_if(dir_contents.begin(), dir_contents.end(), [](const std::filesystem::directory_entry &entry) {
+            return entry.path().filename().string().find(".mp4") == std::string::npos;
+        }), dir_contents.end());
+        
+        std::ranges::sort(dir_contents, [](const std::filesystem::directory_entry &a, const std::filesystem::directory_entry &b) {
+            return a.last_write_time() > b.last_write_time();
+        });
+        dir_contents.erase(dir_contents.begin()); // delete the newest element, it is 
+        
+        std::vector<std::string> dir_contents_str;
+        for(auto &entry : dir_contents) {
+            dir_contents_str.push_back(entry.path().filename().string());
+        }
+        auto resp = json_response_from_vector(dir_contents_str);
+
+        // response += "</ul></body></html>";
+        // auto resp = drogon::HttpResponse::newHttpResponse();
+        // resp->setBody(response);
+        callback(resp);
+    });
+
+    drogon::app().registerHandler("/save_recording", 
+        [this](const drogon::HttpRequestPtr& req, std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
+            auto params = req->getParameters();
+            // auto recordingName = req->getParameter("recording_name");
+            std::string saveOnPipeMsg = "save:" + std::to_string(600); // + :<recordingname> // add support for this
+            std::cout << "Saving recording: " << saveOnPipeMsg << std::endl;
+            std::ofstream pipeFile("/tmp/camrecorder.pipe");
+            pipeFile << saveOnPipeMsg << std::endl;
+            pipeFile.close();
+            auto resp = drogon::HttpResponse::newRedirectionResponse("/");
+            callback(resp);
+        }
+    ,{drogon::Post});
 }
 
 HttpServer::~HttpServer() {

@@ -10,10 +10,35 @@
     <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
+    <table>
+    <tr><p class="livestream">
     <video id="video" controls></video>
-    <button id="play-button">Play Stream</button>
+    <button class="btn" id="play-button">Play Live Stream</button>
+    </p>
+    </tr>
+    <tr>
+    <p class="recordings">
+        <h2>Recording List</h2>
+        <ul id="recordingList"></ul>
+    </p>
+    </tr>
+
+    
+    <tr>
+    <form action="/save_recording" method="post">
+        <button class="btn" type="submit">Save Most Recent 10 minutes of video</button>
+    </form>
+</tr>
+
+<tr>
     <div id="error-message"></div>
-    <script>
-    </script>
+</tr>
+
+<tr>
+    <p class="killbtn">
+        <button id="stop-button" onclick="shutdownCamService()">Kill Car Cam</button>
+    </p>
+</tr>
+</table>
 </body>
 </html>

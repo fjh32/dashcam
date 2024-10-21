@@ -51,7 +51,12 @@ void CamService::saveRecordings(int seconds_back_to_save) {
         std::cout << "Saved file: " << savePath << std::endl;
 
     } else {
-        auto dir_contents = getRecordingDirContents();
+        auto dir_contents = getDirContents(this->recordingDir);
+
+        dir_contents.erase(std::remove_if(dir_contents.begin(), dir_contents.end(), [](const std::filesystem::directory_entry &entry) {
+            return entry.path().filename().string().find(".mp4") == std::string::npos;
+        }), dir_contents.end());
+
         for(const auto& entry :dir_contents) {
             std::time_t file_timestamp = time_t_from_direntry(entry);
             if (file_timestamp > threshold_time) {
@@ -136,10 +141,10 @@ void CamService::cleanupThreadLoop() {
 }
 
 void CamService::deleteOlderFiles(std::time_t threshold_time) {
-    auto dir_contents = getRecordingDirContents();
+    auto dir_contents = getDirContents(this->recordingDir);
     for(auto &entry : dir_contents) {
         std::time_t file_timestamp = time_t_from_direntry(entry);
-	string filename = entry.path().string();
+	    string filename = entry.path().string();
         if ((file_timestamp < threshold_time) && filename.find(".mkv") != std::string::npos) {
             std::filesystem::remove(entry);
             std::cout << "Cleaned up file: " << entry.path().filename().string() << std::endl;
@@ -147,12 +152,4 @@ void CamService::deleteOlderFiles(std::time_t threshold_time) {
     }
 }
 
-std::vector<std::filesystem::directory_entry> CamService::getRecordingDirContents() {
-    std::vector<std::filesystem::directory_entry> dir_contents;
-    for (const auto& entry : std::filesystem::directory_iterator(recordingDir)) {
-        if (std::filesystem::is_regular_file(entry)) {
-            dir_contents.push_back(entry);
-        }
-    }
-    return dir_contents;
-}
+

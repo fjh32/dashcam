@@ -68,3 +68,40 @@ void get_website_root() {
     // std::cout << "Website root: " << WEBSITE_ROOT << std::endl; 
     // #endif
 }
+
+std::string get_ip_address() {
+    struct ifaddrs *interfaces = nullptr;
+    struct ifaddrs *tempAddr = nullptr;
+
+    // Retrieve the current interfaces - returns 0 on success
+    if (getifaddrs(&interfaces) == 0) {
+        // Loop through the list of interfaces
+        tempAddr = interfaces;
+        while (tempAddr != nullptr) {
+            if (tempAddr->ifa_addr->sa_family == AF_INET) { // Check for IPv4 address
+                // Get the IP address
+                char ip[INET_ADDRSTRLEN];
+                void* addr = &((struct sockaddr_in*)tempAddr->ifa_addr)->sin_addr;
+                inet_ntop(AF_INET, addr, ip, INET_ADDRSTRLEN);
+
+                // Avoid loopback addresses
+                if (strcmp(tempAddr->ifa_name, "lo") != 0) {
+                    freeifaddrs(interfaces);
+                    return ip;
+                }
+            }
+            tempAddr = tempAddr->ifa_next;
+        }
+    }
+    return "10.0.0.1";
+}
+
+std::vector<std::filesystem::directory_entry> getDirContents(std::string dir) {
+    std::vector<std::filesystem::directory_entry> dir_contents;
+    for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+        if (std::filesystem::is_regular_file(entry)) {
+            dir_contents.push_back(entry);
+        }
+    }
+    return dir_contents;
+}

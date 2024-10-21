@@ -22,8 +22,8 @@ using namespace std;
 #define VIDEO_HEIGHT 480
 #define FRAME_RATE 10
 #else
-#define VIDEO_WIDTH 1280
-#define VIDEO_HEIGHT 720
+#define VIDEO_WIDTH 1920
+#define VIDEO_HEIGHT 1080
 #define FRAME_RATE 15
 #endif
 
@@ -62,6 +62,7 @@ class RecordingPipeline {
         unique_ptr<GstData> gstData;
         int video_duration;
         std::thread pipelineThread;
+        std::string webroot;
         void pipelineRunner();
         bool handleBusMessage(GstBus *bus);
         void setupGstElements();

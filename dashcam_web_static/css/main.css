@@ -1,6 +1,6 @@
 
 body {
-    display: flex;
+    display: grid;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -13,7 +13,7 @@ body {
     max-width: 100%;
     max-height: 70vh;
 }
-#play-button {
+.btn {
     margin-top: 20px;
     padding: 10px 20px;
     font-size: 16px;
@@ -22,4 +22,11 @@ body {
 #error-message {
     color: red;
     margin-top: 20px;
+}
+#recordingList {
+    max-height: 100px; /* Adjust this height as needed (roughly 5 items) */
+    overflow-y: auto; /* Enable vertical scrolling */
+    border: 1px solid #ccc; /* Optional: add a border to the list */
+    padding: 10px;
+    margin: 20px 0;
 }

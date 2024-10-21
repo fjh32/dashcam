@@ -8,6 +8,13 @@
 #include <chrono>
 #include <filesystem>
 
+#include <ifaddrs.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <cstring>
+#include <vector>
 
 std::time_t now();
 std::chrono::_V2::steady_clock::time_point now_steady();
@@ -32,3 +39,7 @@ int64_t duration(L start, L end) {
 void makeDir(const char * dir);
 
 void get_website_root();
+
+std::string get_ip_address();
+
+std::vector<std::filesystem::directory_entry> getDirContents(std::string);

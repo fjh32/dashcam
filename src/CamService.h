@@ -30,7 +30,7 @@ using namespace std;
 #else
 #define VIDEO_DURATION  1800 
 #define WEB_DIR "./dashcam_web_static/"
-#define WEB_PORT 8888
+#define WEB_PORT 80
 #define WEBSITE_ROOT "https://ripplein.space/"
 #define RECORDING_DIR "/home/recordings/"
 #define RECORDING_SAVE_DIR "/home/recordings/save/"
@@ -66,5 +66,4 @@ class CamService {
         void stopRecording();
         void startRecording();
         void saveRecordings(int seconds_back_to_save);
-        std::vector<std::filesystem::directory_entry> getRecordingDirContents();
 };

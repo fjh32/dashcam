@@ -4,8 +4,12 @@
 #include <memory>
 #include "utilities.h"
 #include <drogon/utils/Utilities.h>
+#include <json/json.h>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
+#include <vector>
+#include <ranges>
 
 using namespace drogon;
 
@@ -25,3 +29,15 @@ class HttpServer {
         std::thread serverThread_;  // Thread to run the Drogon application
 };
 
+template <typename T>
+std::shared_ptr<HttpResponse> json_response_from_vector(std::vector<T> data) {
+    
+    Json::Value jsonArray(Json::arrayValue);
+    for(const auto &item : data) {
+        jsonArray.append(item);
+    }
+
+    auto resp = HttpResponse::newHttpJsonResponse(jsonArray);
+    resp->setContentTypeCode(drogon::CT_APPLICATION_JSON);
+    return resp;
+}
