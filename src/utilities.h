@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <iostream>
 #include <chrono>
+#include <fstream>  
 #include <filesystem>
 
 #include <ifaddrs.h>
@@ -18,6 +19,7 @@
 
 std::time_t now();
 std::chrono::_V2::steady_clock::time_point now_steady();
+std::time_t uptime();
 int64_t duration_ms(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end);
 int64_t duration_s(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end);
 std::string formatted_time();

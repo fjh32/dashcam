@@ -54,7 +54,8 @@ void CamService::saveRecordings(int seconds_back_to_save) {
         auto dir_contents = getDirContents(this->recordingDir);
 
         dir_contents.erase(std::remove_if(dir_contents.begin(), dir_contents.end(), [](const std::filesystem::directory_entry &entry) {
-            return entry.path().filename().string().find(".mp4") == std::string::npos;
+            const std::string filename = entry.path().filename().string();
+            return filename.find(".mp4") == std::string::npos ;
         }), dir_contents.end());
 
         for(const auto& entry :dir_contents) {
@@ -105,7 +106,7 @@ void CamService::listenOnPipe() {
         std::ifstream pipe(PIPE_NAME);
         if (!pipe) {
             std::cerr << "Error opening named pipe: " << strerror(errno) << std::endl;
-            exit(1);
+            continue;
         }
         std::getline(pipe, receivedMessage); // blocking read on pipe
         std::cout << "Received message on pipe: " << receivedMessage << std::endl;

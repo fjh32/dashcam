@@ -29,6 +29,15 @@ int64_t duration_s(std::chrono::steady_clock::time_point start, std::chrono::ste
     return duration_ms(start, end) / 1000;
 }
 
+// uptime in seconds
+std::time_t uptime() {
+    // std::ifstream file = std::ifstream("/proc/uptime");
+    std::ifstream file("/proc/uptime");
+    std::string line;
+    file >> line;
+    return (std::time_t)std::stoul(line.substr(0, line.find(' ')));
+}
+
 std::string formatted_time() {
     return format_time("%m-%d-%Y_%H%M%S");
 }

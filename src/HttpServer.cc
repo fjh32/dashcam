@@ -98,23 +98,21 @@ void HttpServer::register_handlers() {
         // std::string response = "<html><head><title>Recordings</title></head><body><h1>Recordings</h1><ul>";
         std::vector<std::filesystem::directory_entry> dir_contents = getDirContents(this->recordingsPath_);
         dir_contents.erase(std::remove_if(dir_contents.begin(), dir_contents.end(), [](const std::filesystem::directory_entry &entry) {
-            return entry.path().filename().string().find(".mp4") == std::string::npos;
+            std::string filename = entry.path().filename().string();
+            return (filename.find(".mp4") == std::string::npos) 
+                || (filename.find("output") != std::string::npos);
         }), dir_contents.end());
         
         std::ranges::sort(dir_contents, [](const std::filesystem::directory_entry &a, const std::filesystem::directory_entry &b) {
             return a.last_write_time() > b.last_write_time();
         });
-        dir_contents.erase(dir_contents.begin()); // delete the newest element, it is 
+        // dir_contents.erase(dir_contents.begin()); // delete the newest element, it is 
         
         std::vector<std::string> dir_contents_str;
         for(auto &entry : dir_contents) {
             dir_contents_str.push_back(entry.path().filename().string());
         }
         auto resp = json_response_from_vector(dir_contents_str);
-
-        // response += "</ul></body></html>";
-        // auto resp = drogon::HttpResponse::newHttpResponse();
-        // resp->setBody(response);
         callback(resp);
     });
 
@@ -122,7 +120,8 @@ void HttpServer::register_handlers() {
         [this](const drogon::HttpRequestPtr& req, std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
             auto params = req->getParameters();
             // auto recordingName = req->getParameter("recording_name");
-            std::string saveOnPipeMsg = "save:" + std::to_string(600); // + :<recordingname> // add support for this
+            std::time_t uptime_sec = uptime();
+            std::string saveOnPipeMsg = "save:" + std::to_string(uptime_sec); // + :<recordingname> // add support for this
             std::cout << "Saving recording: " << saveOnPipeMsg << std::endl;
             std::ofstream pipeFile("/tmp/camrecorder.pipe");
             pipeFile << saveOnPipeMsg << std::endl;

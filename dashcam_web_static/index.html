@@ -4,41 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashcam</title>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.10/hls.min.js"></script> -->
     <script src="/js/hls.min.1.4.10.js"></script>
     <script src="/js/main.js"></script>
     <link rel="stylesheet" href="/css/main.css">
+    <style>
+    </style>
 </head>
 <body>
+
+    <div class="video-container">
+        <video id="video" controls preload="none" playsinline></video>
+    </div>
+
     <table>
-    <tr><p class="livestream">
-    <video id="video" controls></video>
-    <button class="btn" id="play-button">Play Live Stream</button>
-    </p>
-    </tr>
-    <tr>
-    <p class="recordings">
-        <h2>Recording List</h2>
-        <ul id="recordingList"></ul>
-    </p>
-    </tr>
+        <tr>
+            <td colspan="3">
+                <div id="error-message"></div>
+            </td>
+        </tr>
+        <tr>
+            <td><button class="btn" id="play-hls-button">Play LiveStream</button></td>
+            <td><button class="btn" id="play-recording-button">Play Selected Recording</button></td>
+            <td>
+                <form action="/save_recording" method="post">
+                    <button class="btn" type="submit">Bookmark Most Recent Trip</button>
+                </form>
+            </td>
+            <!-- <button class="btn" onclick="getSelectedRecording()">Get Selected Recording</button> -->
+        </tr>
+        <tr class="recording-row">
+            <td><h2>Recording List</h2></td>
+            <td colspan="2">
+                <p class="recordings">
+                    <ul id="recordingList"></ul>
+                </p>
+            </td>
+        </tr>
+        
+        <tr>
+            <td colspan="3">
+                <p class="killbtn">
+                    <button id="stop-button" onclick="shutdownCamService()">Safely Shutdown Car Cam</button>
+                </p>
+            </td>
+        </tr>
+    </table>
 
-    
-    <tr>
-    <form action="/save_recording" method="post">
-        <button class="btn" type="submit">Save Most Recent 10 minutes of video</button>
-    </form>
-</tr>
-
-<tr>
-    <div id="error-message"></div>
-</tr>
-
-<tr>
-    <p class="killbtn">
-        <button id="stop-button" onclick="shutdownCamService()">Kill Car Cam</button>
-    </p>
-</tr>
-</table>
 </body>
 </html>

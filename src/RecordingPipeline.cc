@@ -7,6 +7,19 @@ using namespace std;
 static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointer user_data) {
     RecordingPipeline* instance = static_cast<RecordingPipeline*>(user_data);
     string filepath = instance->recordingDir + "/output_" + formatted_time() + ".mp4";
+
+    // if( instance->currentlyRecordingVideoName != "None") {
+    //     std::string old_filename = instance->currentlyRecordingVideoName;
+    // //     debugPrint("Going to call ffmpeg on: " + old_filename);
+    // //     // instance->ffmpeg_optimize_list.push_back(old_filename);
+    // //     instance->ffmpeg_faststart_thread(old_filename);
+    //     // std::thread post_processing_thread([old_filename, instance]() {
+    //     //     instance->ffmpeg_faststart(old_filename);
+    //     // });
+    //     // post_processing_thread.detach(); 
+    //     // instance->ffmpeg_faststart(old_filename);
+    // }
+
     instance->currentlyRecordingVideoName = filepath;
     cout << "Recording new video: " << filepath << endl;
     return g_strdup(filepath.c_str()); // Return the new filename (must be dynamically allocated since GStreamer will free it)
@@ -89,12 +102,26 @@ void RecordingPipeline::stopPipeline() {
 
 bool RecordingPipeline::handleBusMessage(GstBus *bus) {
     bool keepRunning = true;
-    GstMessage *msg = gst_bus_timed_pop_filtered(bus, 500*GST_MSECOND, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
+    GstMessage *msg = gst_bus_timed_pop_filtered(bus, 500*GST_MSECOND, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_ELEMENT | GST_MESSAGE_EOS));
     if(msg) {
         GError *err;
         gchar *debug_info;
         switch(GST_MESSAGE_TYPE(msg)) {
-            case GST_MESSAGE_ERROR:
+            case GST_MESSAGE_ELEMENT: {
+                cout << "Element message received." << endl;
+                const GstStructure *s = gst_message_get_structure(msg);
+                if (gst_structure_has_name(s, "splitmuxsink-fragment-closed")) {
+                    const gchar *filename = gst_structure_get_string(s, "location");
+                    std::string s( filename );
+                    cout << "Fragment closed starting thread on: " << s << endl;
+                    std::thread post_processing_thread([s, this]() {
+                        this->ffmpeg_faststart(s);
+                    });
+                    post_processing_thread.detach();
+                } 
+                break;
+            }
+            case GST_MESSAGE_ERROR: {
                 gst_message_parse_error(msg, &err, &debug_info);
                 cout << "Error received from element " << GST_OBJECT_NAME(msg->src) << ": " << err->message << endl;
                 cout << "Debugging information: " << (debug_info ? debug_info : "none") << endl;
@@ -102,13 +129,16 @@ bool RecordingPipeline::handleBusMessage(GstBus *bus) {
                 g_free(debug_info);
                 keepRunning = false;
                 break;
-            case GST_MESSAGE_EOS:
+            }
+            case GST_MESSAGE_EOS: {
                 cout << "End-Of-Stream reached." << endl;
                 keepRunning = false;
                 break;
-            default:
+            }
+            default: {
                 cout << "Unexpected message received." << endl;
                 break;
+            }
         }
         gst_message_unref(msg);
     }
@@ -226,8 +256,8 @@ void RecordingPipeline::setupSoftwareEncodingRecorder() {
         "speed-preset", 1,   // ultrafast
         "bitrate", 2000,     // Adjust based on your needs
         "key-int-max", FRAME_RATE,  // GOP size, adjust if needed
-        "profile", 2,        // Change to main profile (2) instead of baseline (1)
-        "level", 31,         // Set to Level 3.1 (compatible with most devices)
+        // "profile", 2,        // Change to main profile (2) instead of baseline (1)
+        // "level", 31,         // Set to Level 3.1 (compatible with most devices)
         NULL);
 
     GstCaps *caps = gst_caps_new_simple(
@@ -272,16 +302,31 @@ void RecordingPipeline::setupFileSinkElements() {
     gstData->file_sink_queue = gst_element_factory_make("queue", "file_sink_queue");
     gstData->muxer = gst_element_factory_make("mp4mux", "muxer");
     gstData->sink = gst_element_factory_make("splitmuxsink", "sink");
+    // gstData->sink = gst_element_factory_make("filesink", "sink");
     
-    g_object_set(gstData->muxer, "faststart", TRUE, NULL);     // for streaming mp4 files to the browser
+    std::cout << "faststart setting on mp4mux" << std::endl;
+    g_object_set(gstData->muxer,
+		 "faststart", TRUE,
+		//  "fragment-duration", 1000 * 1800,
+         "streamable", TRUE,
+        //  "reserved-moov-update-period", 2,          // Update moov atom every 2 seconds
+        //          "reserved-max-duration", 3600,             // Reserve for a maximum duration of 1 hour (3600 seconds)
+                //  "reserved-bytes-per-sec", 1024 * 64,  
+		 // 		 "fragment-mode", 1,
+		 NULL);     // for streaming mp4 files to the browser
+
+    // GstStructure *muxer_props = gst_structure_from_string("properties,reserved-max-duration=3600,reserved-moov-update-period=2,faststart=true", NULL);
 
     g_object_set(gstData->sink, "muxer", gstData->muxer, NULL);
+    // g_object_set(gstData->sink, "muxer-properties", muxer_props, NULL); // Set the properties for the muxer
+    // gst_structure_free(muxer_props);
     g_object_set(gstData->sink, "max-size-time", (guint64)video_duration * GST_SECOND, NULL); // 30 minutes
     g_signal_connect(gstData->sink, "format-location", G_CALLBACK(make_new_filename), this);
+    // g_object_set(gstData->sink, "location", "output.mp4", NULL); // Set the output file location
 
     gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->file_sink_queue, gstData->sink, NULL);
     if(!gst_element_link_many(gstData->file_sink_queue, gstData->sink, NULL)) {
-        std::cout << "Error: Could not link gstreamer elements." << std::endl;
+        std::cout << "Error: Could not link gstreamer filesink elements." << std::endl;
         exit(1);
     }
 
@@ -342,8 +387,8 @@ void RecordingPipeline::setupHlsElements() {
                 "playlist-length", 2,
                 "max-files", 2,
                 "playlist-root", this->webroot.c_str(),
-                "disable-hls-cache", TRUE,
-                "program-date-time", TRUE,
+		 //                "disable-hls-cache", TRUE,
+                // "program-date-time", TRUE,
                 NULL);
 
     
@@ -378,4 +423,30 @@ void RecordingPipeline::setupHlsElements() {
     gst_object_unref(tee_hls_pad);
 
     std::cout << "HLS elements setup successfully. Web root " << webroot << std::endl;
+}
+
+void RecordingPipeline::ffmpeg_faststart(std::string filepath) {
+    try{
+        debugPrint("Running ffmpeg faststart on: " + filepath);
+        std::string prefix = "output_";
+        std::string newfilename = filepath;
+        newfilename = newfilename.replace(newfilename.find(prefix), prefix.length(), ""); // Remove prefix
+        std::string command = "ffmpeg -y -i " + filepath + " -movflags faststart -c copy " + newfilename + " > /dev/null 2>&1";
+        std::cout << "Executing ffmpeg faststart command: " << command << std::endl;
+        if (std::system(command.c_str()) != 0) {
+            std::cerr << "Error executing ffmpeg command for " << filepath << std::endl;
+        }
+        std::system(("rm " + filepath).c_str()); // Remove the original file after processing
+        // debugPrint("ffmpeg faststart completed for: " + newfilename);
+    } catch (const std::exception& e) {
+        std::cerr << "Error during ffmpeg faststart on " << filepath << ": " << e.what() << std::endl;
+    }
+}
+
+void RecordingPipeline::ffmpeg_faststart_thread(std::string filename) {
+    // ffmpegThread = nullptr;
+    ffmpegThread = make_shared<std::thread>([this, filename]() {
+        ffmpeg_faststart(filename);
+    });
+    ffmpegThread->detach(); // Detach the thread to allow it to run independently
 }

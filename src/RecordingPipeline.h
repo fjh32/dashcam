@@ -53,16 +53,20 @@ class RecordingPipeline {
         bool pipelineKilled;
         string recordingDir;
         string currentlyRecordingVideoName;
+        vector<string> ffmpeg_optimize_list;
 
         void startPipeline();
         void stopPipeline();
         void createNewVideo();
 
+        void ffmpeg_faststart_thread(std::string filename);
+        void ffmpeg_faststart( std::string filename);
     private:
         unique_ptr<GstData> gstData;
         int video_duration;
         std::thread pipelineThread;
         std::string webroot;
+        shared_ptr<std::thread> ffmpegThread;
         void pipelineRunner();
         bool handleBusMessage(GstBus *bus);
         void setupGstElements();
@@ -70,4 +74,5 @@ class RecordingPipeline {
         void setupFileSinkElements();
         void setupSoftwareEncodingRecorder();
         void setupHardwareEncodingRecorder();
+        
 };

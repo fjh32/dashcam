@@ -7,3 +7,5 @@ recordings/
 log*
 testing_flask_*
 uploads*
+test.cc
+a.out
