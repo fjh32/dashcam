@@ -16,8 +16,10 @@ For an optimal experience, the RPI should be setup as a Wireless Access Point.
 ## Running
 - Make sure to have cmake and an up to date c++ compiler
 1. Clone the repository.
-2. `./build.sh`
-3. `./build/dashcam`
+2. `./build.sh -r -rpi`
+     - `-r` for a release build
+     - `-rpi` for use with a raspberry pi camera module (libcamera)
+4. `./build/dashcam`
 
 ## Access the Dashcam Web Interface
 - The application runs a webserver on port 80.
