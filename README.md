@@ -14,7 +14,11 @@ This project is a dashcam application that allows users to record and store vide
 2. `./build.sh`
 3. `./build/dashcam`
 
-## Usage
+## Access the Dashcam Web Interface
+- The application runs a webserver on port 80.
+- Once the application is running, access the web interface with `http://<ip_address>`
+
+### Dev Usage
 - Pipe is opened in `/tmp/camrecorder.pipe`
 - `$ echo save:300 >> /tmp/camrecorder.pipe` to save the last 300 seconds, or the most recent video if the configured VIDEO_DURATION is > 300 seconds.
 - `$ echo stop >> /tmp/camrecorder.pipe` to stop cam server.
