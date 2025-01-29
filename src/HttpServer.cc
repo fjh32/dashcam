@@ -99,8 +99,8 @@ void HttpServer::register_handlers() {
         std::vector<std::filesystem::directory_entry> dir_contents = getDirContents(this->recordingsPath_);
         dir_contents.erase(std::remove_if(dir_contents.begin(), dir_contents.end(), [](const std::filesystem::directory_entry &entry) {
             std::string filename = entry.path().filename().string();
-            return (filename.find(".mp4") == std::string::npos) 
-                || (filename.find("output") != std::string::npos);
+            return (filename.find(".mp4") == std::string::npos);
+	      //                || (filename.find("output") != std::string::npos);
         }), dir_contents.end());
         
         std::ranges::sort(dir_contents, [](const std::filesystem::directory_entry &a, const std::filesystem::directory_entry &b) {

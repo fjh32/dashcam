@@ -25,7 +25,7 @@ function populateRecordingList() {
             if (Array.isArray(data)) {
                 // Loop through each recording and create list items with radio buttons
                 data.forEach(recording => {
-                    if (!recording.includes('output')) {
+//                    if (!recording.includes('output')) {
                         const listItem = document.createElement('li');
                         const radio = document.createElement('input');
                         const label = document.createElement('label');
@@ -49,7 +49,7 @@ function populateRecordingList() {
                         listItem.appendChild(radio);
                         listItem.appendChild(label);
                         recordingListElement.appendChild(listItem);
-                    }
+                    //}
                 });
             }
         })

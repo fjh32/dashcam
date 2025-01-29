@@ -111,13 +111,13 @@ bool RecordingPipeline::handleBusMessage(GstBus *bus) {
                 cout << "Element message received." << endl;
                 const GstStructure *s = gst_message_get_structure(msg);
                 if (gst_structure_has_name(s, "splitmuxsink-fragment-closed")) {
-                    const gchar *filename = gst_structure_get_string(s, "location");
-                    std::string s( filename );
-                    cout << "Fragment closed starting thread on: " << s << endl;
-                    std::thread post_processing_thread([s, this]() {
-                        this->ffmpeg_faststart(s);
-                    });
-                    post_processing_thread.detach();
+		  //                    const gchar *filename = gst_structure_get_string(s, "location");
+		  //std::string s( filename );
+		  //cout << "Fragment closed starting thread on: " << s << endl;
+		  //std::thread post_processing_thread([s, this]() {
+		  //    this->ffmpeg_faststart(s);
+		  //});
+		  //post_processing_thread.detach();
                 } 
                 break;
             }
@@ -306,9 +306,10 @@ void RecordingPipeline::setupFileSinkElements() {
     
     std::cout << "faststart setting on mp4mux" << std::endl;
     g_object_set(gstData->muxer,
-		 "faststart", TRUE,
-		//  "fragment-duration", 1000 * 1800,
-         "streamable", TRUE,
+		 "faststart", 1,
+		//  "fragment-duration", 1000,
+		 "streamable", 1,
+		 //"fragment-mode", 1,
         //  "reserved-moov-update-period", 2,          // Update moov atom every 2 seconds
         //          "reserved-max-duration", 3600,             // Reserve for a maximum duration of 1 hour (3600 seconds)
                 //  "reserved-bytes-per-sec", 1024 * 64,  
