@@ -19,7 +19,7 @@ For an optimal experience, the RPI should be setup as a Wireless Access Point.
 2. `./build.sh -r -rpi`
      - `-r` for a release build
      - `-rpi` for use with a raspberry pi camera module (libcamera)
-4. `./build/dashcam`
+4. `./release_build/dashcam`
 
 ## Access the Dashcam Web Interface
 - The application runs a webserver on port 80.
