@@ -2,10 +2,15 @@
 
 ## Description
 
-This project is a dashcam application that allows users to record and store video footage while driving. It provides features such as real-time video recording.
+This project is a dashcam application that allows users to record and store video footage while driving.
+
+A web interface supports real-time HTTP Live Stream and historical video playback.
+
+For an optimal experience, the RPI should be setup as a Wireless Access Point.
 
 ## Build Deps
 - C++ Gstreamer Libs
+- libcamera for RPI
 - cmake
 
 ## Running
