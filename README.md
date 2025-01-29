@@ -25,7 +25,7 @@ This project is a dashcam application that allows users to record and store vide
 - Real-time video recording
 - Clip saving and automatic file cleanup
 - TODO Automatic event detection
-- TODO Video playback
+- Video playback
 - TODO Customizable settings
 
 ## Contributing
