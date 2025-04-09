@@ -11,7 +11,7 @@ For an optimal experience, the RPI should be setup as a Wireless Access Point.
 ## Build Dependencies
 ### On a new RPi, install these packages
 ```sh
-sudo apt install cmake libcamera-dev libjsoncpp-dev uuid-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-libcamera libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x
+sudo apt install cmake libcamera-dev libjsoncpp-dev uuid-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-libcamera libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x
 ```
 - C++ Gstreamer Libs
 - libcamera for RPI
