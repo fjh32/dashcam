@@ -1,0 +1,32 @@
+sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-tools
+frank@berry:~ $ sudo apt install libcamera-dev
+sudo apt install v4l-utils gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav
+sudo apt install libopencv-dev python3-opencv
+g++ libjsoncpp-dev uuid-dev openssl libssl-dev zlib1g-dev libcurl4-openssl-dev
+
+git clone https://github.com/drogonframework/drogon.git
+cd drogon
+git submodule update --init
+mkdir build
+cd build
+cmake ..
+make && sudo make install
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=20 .. && make -j4 && sudo make install
+
+sudo apt install gstreamer1.0-libcamera
+
+
+
+libcamera-vid -t 0 --width 1280 --height 720 --framerate 30 --codec h264 -o - | ffmpeg -i - -c:v copy test.mp4
+
+gst-launch-1.0 libcamerasrc ! capsfilter caps=video/x-raw,width=1280,height=720,format=NV12 ! v4l2convert ! v4l2h264enc extra-controls="controls,repeat_sequence_header=1" ! 'video/x-h264,level=(string)4' ! h264parse ! filesink location=test.264
+
+
+gst-launch-1.0 libcamerasrc ! capsfilter caps=video/x-raw,width=1280,height=720,format=NV12 ! v4l2convert ! v4l2h264enc extra-controls="controls,repeat_sequence_header=1" ! 'video/x-h264,level=(string)4' ! h264parse ! matroskamux ! filesink location=test.mkv
+
+//g++ -o video_pipeline test_pipeline.cc `pkg-config --cflags --libs gstreamer-1.0`
+
+
+scp release_build/dashcam frank@192.168.1.71:~/dashcam_exe
+scp -r dashcam_web_static/ frank@192.168.1.71:~/
+scp -r dashcam.service frank@192.168.1.71:~/
