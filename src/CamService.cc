@@ -125,30 +125,41 @@ void CamService::listenOnPipe() {
 
 void CamService::cleanupThreadLoop() {
     debugPrint("Starting cleanupThreadLoop()");
+
     time_t start_time = now();
     std::time_t threshold_time = start_time - DELETE_OLDER_THAN;
+
     while(running) {
+
         time_t current_time = now();
         auto diff = current_time - start_time;
+
         if (diff > VIDEO_DURATION) {
             deleteOlderFiles(threshold_time);
             start_time = current_time;
             threshold_time = start_time - DELETE_OLDER_THAN;
         }
+
         std::this_thread::sleep_for(std::chrono::seconds(1));   
     }
+
     debugPrint("Exiting cleanupThreadLoop()");
 }
 
 void CamService::deleteOlderFiles(std::time_t threshold_time) {
+
     auto dir_contents = getDirContents(this->recordingDir);
+
     for(auto &entry : dir_contents) {
+
         std::time_t file_timestamp = time_t_from_direntry(entry);
 	    string filename = entry.path().string();
-        if ((file_timestamp < threshold_time) && filename.find(".mkv") != std::string::npos) {
+
+        if ((file_timestamp < threshold_time) && filename.find("output_") != std::string::npos) {
             std::filesystem::remove(entry);
             std::cout << "Cleaned up file: " << entry.path().filename().string() << std::endl;
         }
+
     }
 }
 
