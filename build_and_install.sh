@@ -9,9 +9,9 @@ sudo mkdir -p "$RECORDINGS_DIR"
 sudo chown -R "$USER:$USER" "$RECORDINGS_DIR"
 
 # Clean build
-rm -rf release_build
-rm CMakeCache.txt
-rm -rf CMakeFiles
+rm -rf release_build || true
+rm -rf CMakeCache.txt || true
+rm -rf CMakeFiles || true
 # Check for debug mode
 if [[ "$1" == "--desktop" ]]; then
     echo "🛠️  Debug mode selected. Building without -rpi flag."
