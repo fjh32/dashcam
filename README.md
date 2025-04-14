@@ -14,38 +14,38 @@ See also: [Dashcam Web](https://github.com/fjh32/dashcam_web)
 
 ### 📦 Build Dependencies
 
-#### 🛠️ On a new Raspberry Pi, install these packages:
+#### On a new Raspberry Pi, install these packages:
 
 ```sh
 sudo apt install cmake libcamera-dev libjsoncpp-dev uuid-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-libcamera libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x
 ```
 
-- 📚 C++ GStreamer libraries
-- 🎥 `libcamera` for Raspberry Pi
-- 🧱 `cmake` build system
-- 📷 Raspberry Pi Camera Module
+- C++ GStreamer libraries
+- `libcamera` for Raspberry Pi
+- `cmake` build system
+- Raspberry Pi Camera Module
 
 ---
 
 ### ▶️ Running
 
-- ✅ Make sure to have `cmake` and an up-to-date C++ compiler
+-  Make sure to have `cmake` and an up-to-date C++ compiler
 
-1. 📅 Clone the repository
+1.  Clone the repository
 2. 🚀 Run: `./build_and_install.sh`
-   - 📁 Recordings directory: `/var/lib/dashcam/recordings`
-   - 🧰 `dashcam` binary is installed to: `/usr/local/bin`
-   - 🛠️ `dashcam.service` is installed to: `/etc/systemd/system`
+   -  Recordings directory: `/var/lib/dashcam/recordings`
+   -  `dashcam` binary is installed to: `/usr/local/bin`
+   -  `dashcam.service` is installed to: `/etc/systemd/system`
 
 ---
 
-### ✨ Features
+###  Features
 
-- 🎬 Real-time video recording
-- 📀 Clip saving and automatic file cleanup
-- 🔄 Video playback
-- 🧠 TODO: Automatic event detection
-- ⚙️ TODO: Customizable settings
+- Real-time video recording
+- Clip saving and automatic file cleanup
+- Video playback
+- TODO: Automatic event detection
+- ⚙TODO: Customizable settings
 
 ---
 
@@ -57,16 +57,16 @@ A separate GitHub repo will host the web interface for real-time video playback 
 
 ### 🧪 Dev Usage
 
-- 🧵 Pipe interface: `/tmp/camrecorder.pipe`
-- 💡 Save last 300 seconds:
+- Pipe interface: `/tmp/camrecorder.pipe`
+- Save last 300 seconds:
   ```sh
   echo save:300 >> /tmp/camrecorder.pipe
   ```
-- ⛔ Stop the server:
+- Stop the server:
   ```sh
   echo stop >> /tmp/camrecorder.pipe
   ```
-- ⌨️ Press `Ctrl+C` to kill the server cleanly.
+- Press `Ctrl+C` to kill the server cleanly.
 
 ---
 
