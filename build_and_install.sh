@@ -26,7 +26,9 @@ fi
 # Install systemd service and binary
 echo "📝 Installing systemd service..."
 sed "s|@USER@|$REAL_USER|g" dashcam.service.template | sudo tee /etc/systemd/system/dashcam.service > /dev/null
-
+if [[ "$1" == "--desktop" ]]; then
+    sudo sed -i '/^\[Service\]/a RestartSec=10s' /etc/systemd/system/dashcam.service
+fi
 echo "📦 Installing binary to /usr/local/bin..."
 cd "$BUILD_DIR"
 sudo make install

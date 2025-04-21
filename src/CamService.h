@@ -33,7 +33,7 @@ using namespace std;
 #define WEBSITE_ROOT "https://ripplein.space/"
 #define RECORDING_DIR "/var/lib/dashcam/recordings/"
 #define RECORDING_SAVE_DIR "/var/lib/dashcam/recordings/save/"
-#define DELETE_OLDER_THAN 86400
+#define DELETE_OLDER_THAN 60 * 60 * 24 * 5 // 5 days
 #endif
 
 class CamService {

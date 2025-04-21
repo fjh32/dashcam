@@ -3,6 +3,9 @@
 
 using namespace std;
 
+void handle_error_naive(std::string errMsg);
+void wait_for_video_device();
+
 // callback function to create new filename for splitmuxsink
 static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointer user_data) {
     RecordingPipeline* instance = static_cast<RecordingPipeline*>(user_data);
@@ -77,6 +80,10 @@ void RecordingPipeline::pipelineRunner() {
     if(!pipelineRunning) {
         debugPrint("Starting pipeline");
 
+        #if !defined(RPI_MODE) && !defined(RPI_ZERO_MODE)
+        wait_for_video_device();
+        #endif
+
         gst_element_set_state(gstData->pipeline, GST_STATE_PLAYING);
         pipelineRunning = true;
         gstData->bus = gst_element_get_bus(gstData->pipeline);
@@ -129,8 +136,15 @@ bool RecordingPipeline::handleBusMessage(GstBus *bus) {
             }
             case GST_MESSAGE_ERROR: {
                 gst_message_parse_error(msg, &err, &debug_info);
-                cout << "Error received from element " << GST_OBJECT_NAME(msg->src) << ": " << err->message << endl;
+                std::string errMsg = err ? err->message : "";
+                std::string dbgInfo = debug_info ? debug_info : "";
+
+                cout << "Error received from element " << GST_OBJECT_NAME(msg->src) << ": " << errMsg << endl;
                 cout << "Debugging information: " << (debug_info ? debug_info : "none") << endl;
+
+                handle_error_naive(errMsg);
+                handle_error_naive(dbgInfo);
+
                 g_clear_error(&err);
                 g_free(debug_info);
                 keepRunning = false;
@@ -149,6 +163,14 @@ bool RecordingPipeline::handleBusMessage(GstBus *bus) {
         gst_message_unref(msg);
     }
     return keepRunning;
+}
+
+void handle_error_naive(std::string errMsg) {
+    // Throw if error message contains "/dev/video"
+    if (errMsg.find("/dev/video") != std::string::npos) {
+        std::string fullMsg = "Fatal device error: " + errMsg;
+        throw std::runtime_error(fullMsg);
+    }
 }
 
 void RecordingPipeline::setupGstElements() {
@@ -520,4 +542,16 @@ void RecordingPipeline::setupHardwareEncodingRecorder() {
         std::cout << "Error: Could not link gstreamer elements in RPI ZERO PIPELINE." << std::endl;
         exit(1);
     }
+}
+
+
+void wait_for_video_device() {
+    const std::string devicePath = "/dev/video0";
+
+    while (!std::filesystem::exists(devicePath)) {
+        std::cout << "Waiting for " << devicePath << " to become available..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    std::cout << devicePath << " is now available." << std::endl;
 }
