@@ -15,7 +15,7 @@ cmake_install.cmake
 Makefile
 build/
 build.ninja
-release_build
+release_build/
 cmake_install.cmake
 .priv_git
 .priv_git/*
