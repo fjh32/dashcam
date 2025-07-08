@@ -21,9 +21,8 @@ sudo apt install cmake libcamera-dev libjsoncpp-dev uuid-dev libgstreamer1.0-dev
 ```
 
 - C++ GStreamer libraries
-- `libcamera` for Raspberry Pi
+- `libcamera` for Raspberry Pi Camera Module
 - `cmake` build system
-- Raspberry Pi Camera Module
 
 ---
 
