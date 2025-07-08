@@ -271,6 +271,9 @@ void RecordingPipeline::setupSoftwareEncodingRecorder() {
     gstData->queue = gst_element_factory_make("queue", "queue");
     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     gstData->videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
+    
+    gstData->videoflip = gst_element_factory_make("videoflip", "videoflip");
+
     gstData->h264parser = gst_element_factory_make("h264parse", "h264parser");
     gstData->tee = gst_element_factory_make ("tee", "tee");
 
@@ -279,6 +282,7 @@ void RecordingPipeline::setupSoftwareEncodingRecorder() {
         !gstData->queue || 
         !gstData->capsfilter || 
         !gstData->videoconvert || 
+        !gstData->videoflip ||
         !gstData->encoder || 
         !gstData->h264parser || 
         !gstData->tee) {
@@ -299,6 +303,8 @@ void RecordingPipeline::setupSoftwareEncodingRecorder() {
         // "level", 31,         // Set to Level 3.1 (compatible with most devices)
         NULL);
 
+    g_object_set(gstData->videoflip, "method", 2, NULL); // rotate-180
+
     GstCaps *caps = gst_caps_new_simple(
         "video/x-raw",
         "format", G_TYPE_STRING, "NV12",
@@ -315,17 +321,19 @@ void RecordingPipeline::setupSoftwareEncodingRecorder() {
     //             NULL);
 
     gst_bin_add_many(GST_BIN(gstData->pipeline), 
-                            gstData->source, 
-                            gstData->queue, 
-                            gstData->capsfilter, 
-                            gstData->videoconvert, 
-                            gstData->encoder,  
-                            gstData->h264parser,
-                            gstData->tee, 
-                            NULL);
-    if(!gst_element_link_many(gstData->source, 
+                                gstData->source, 
                                 gstData->queue, 
                                 gstData->capsfilter, 
+                                gstData->videoflip,      
+                                gstData->videoconvert, 
+                                gstData->encoder,  
+                                gstData->h264parser,
+                                gstData->tee, 
+                                NULL);
+    if (!gst_element_link_many(gstData->source, 
+                                gstData->queue, 
+                                gstData->capsfilter, 
+                                gstData->videoflip,
                                 gstData->videoconvert, 
                                 gstData->encoder, 
                                 gstData->h264parser, 

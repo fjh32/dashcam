@@ -41,6 +41,7 @@ class GstData {
         GstElement *post_encode_caps, *h264parser;
         GstElement *muxer, *file_sink_queue, *sink;
         GstElement  *hls_queue, *h264parse, *hlsmux, *hlssink;
+        GstElement *videoflip;
         GstBus *bus;
 };
 
