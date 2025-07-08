@@ -4,8 +4,7 @@ CamService::CamService(int* argc, char** argv[]) {
     debugPrint("Creating CamService object");
     recordingDir = RECORDING_DIR;
     recordingSaveDir = RECORDING_SAVE_DIR;
-    makeDir(recordingDir.c_str());
-    makeDir(recordingSaveDir.c_str());
+    prepDirForService();
     createListeningPipe();
     recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
     running = false;
@@ -163,4 +162,20 @@ void CamService::deleteOlderFiles(std::time_t threshold_time) {
     }
 }
 
+void CamService::prepDirForService() {
+    makeDir(this->recordingDir.c_str());
+    makeDir(this->recordingSaveDir.c_str());
+    std::time_t threshold_time = now() - DELETE_OLDER_THAN;
+    deleteOlderFiles(threshold_time);
 
+    // delete any segment*.ts or livestream.m3u8
+    static const std::regex segmentRegex(R"(segment\d*\.ts)");
+
+    for (const auto& entry : std::filesystem::directory_iterator(this->recordingDir)) {
+        std::string filename = entry.path().filename().string();
+        if(entry.is_regular_file() && (   filename.find("livestream.m3u8") != std::string::npos
+                                    ||  std::regex_search(filename, segmentRegex)  )) {
+                                        std::filesystem::remove(entry.path());
+                                    }
+    }
+}

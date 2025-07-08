@@ -58,6 +58,7 @@ class CamService {
         void makeRecordingDirs();
         void cleanupThreadLoop();
         void deleteOlderFiles(std::time_t threshold_time);
+        void prepDirForService();
 
         bool isRecording();
         void stopRecording();
