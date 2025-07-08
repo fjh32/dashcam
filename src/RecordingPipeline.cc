@@ -464,31 +464,6 @@ void RecordingPipeline::setupHlsElements() {
     std::cout << "HLS elements setup successfully. Web root " << webroot << std::endl;
 }
 
-void RecordingPipeline::ffmpeg_faststart(std::string filepath) {
-    try{
-        debugPrint("Running ffmpeg faststart on: " + filepath);
-        std::string prefix = "output_";
-        std::string newfilename = filepath;
-        newfilename = newfilename.replace(newfilename.find(prefix), prefix.length(), ""); // Remove prefix
-        std::string command = "ffmpeg -y -i " + filepath + " -movflags faststart -c copy " + newfilename + " > /dev/null 2>&1";
-        std::cout << "Executing ffmpeg faststart command: " << command << std::endl;
-        if (std::system(command.c_str()) != 0) {
-            std::cerr << "Error executing ffmpeg command for " << filepath << std::endl;
-        }
-        std::system(("rm " + filepath).c_str()); // Remove the original file after processing
-        // debugPrint("ffmpeg faststart completed for: " + newfilename);
-    } catch (const std::exception& e) {
-        std::cerr << "Error during ffmpeg faststart on " << filepath << ": " << e.what() << std::endl;
-    }
-}
-
-void RecordingPipeline::ffmpeg_faststart_thread(std::string filename) {
-    // ffmpegThread = nullptr;
-    ffmpegThread = make_shared<std::thread>([this, filename]() {
-        ffmpeg_faststart(filename);
-    });
-    ffmpegThread->detach(); // Detach the thread to allow it to run independently
-}
 
 
 

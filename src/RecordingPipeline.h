@@ -62,8 +62,6 @@ class RecordingPipeline {
         void stopPipeline();
         void createNewVideo();
 
-        void ffmpeg_faststart_thread(std::string filename);
-        void ffmpeg_faststart( std::string filename);
     private:
         unique_ptr<GstData> gstData;
         std::thread pipelineThread;

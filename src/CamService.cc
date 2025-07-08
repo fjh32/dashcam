@@ -51,10 +51,10 @@ void CamService::saveRecordings(int seconds_back_to_save) {
     } else {
         auto dir_contents = getDirContents(this->recordingDir);
 
-        dir_contents.erase(std::remove_if(dir_contents.begin(), dir_contents.end(), [](const std::filesystem::directory_entry &entry) {
-            const std::string filename = entry.path().filename().string();
-            return filename.find(".mp4") == std::string::npos ;
-        }), dir_contents.end());
+        // dir_contents.erase(std::remove_if(dir_contents.begin(), dir_contents.end(), [](const std::filesystem::directory_entry &entry) {
+        //     const std::string filename = entry.path().filename().string();
+        //     return filename.find(".mp4") == std::string::npos ;
+        // }), dir_contents.end());
 
         for(const auto& entry :dir_contents) {
             std::time_t file_timestamp = time_t_from_direntry(entry);
