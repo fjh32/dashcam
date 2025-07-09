@@ -17,8 +17,21 @@
 
 #include "RecordingPipeline.h"
 
-class V4l2PipelineSrc : virtual public RecordingPipeline {
-    protected:
-        void setupV4l2SrcAndTee();
+class V4l2PipelineSrc : public PipelineSource {
+    
+    public:
         void wait_for_video_device();
+        void setupSource(GstElement* pipeline) override;
+        GstPad* getSourcePad() override;
+        GstElement* getTee() override;
+
+    private:
+        GstElement *source = nullptr;
+        GstElement *queue = nullptr;
+        GstElement *capsfilter = nullptr;
+        GstElement *videoconvert = nullptr;
+        GstElement *encoder = nullptr;
+        GstElement *parser = nullptr;
+        GstElement *tee = nullptr;
+
 };

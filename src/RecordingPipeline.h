@@ -41,43 +41,80 @@ class GstData {
         GstBus *bus;
 };
 
-class PipelineSrc {
+class PipelineSource {
     public:
-        virtual GstElement* getSrcPad() = 0;
-        virtual void setupSrc(GstElement* pipeline) = 0;
-        virtual void ~PipelineSrc() = default;
+        virtual GstPad* getSourcePad() = 0;
+        virtual GstElement* getTee() = 0;
+        virtual void setupSource(GstElement* pipeline) = 0;
+        virtual ~PipelineSource() = default;
 };
 
 class PipelineSink {
     public:
-        virtual GstElement* getSinkPad() = 0;
+        virtual GstPad* getSinkPad() = 0;
+        virtual GstElement* getSinkElement() = 0;
         virtual void setupSink(GstElement* pipeline) = 0;
-        virtual void ~PipelineSink() = default;
+        virtual ~PipelineSink() = default;
 };
 
 class RecordingPipeline {
     public:
-        // in the future, provide an optional gstreamer source to this pipeline
         RecordingPipeline(const char dir[], int vid_duration, int* argc, char*** argv);
         ~RecordingPipeline();
 
-        bool pipelineRunning;
-        bool pipelineKilled;
-        string recordingDir;
-        int video_duration;
-        string currentlyRecordingVideoName;
+        void setSource(std::unique_ptr<PipelineSource> source);
+        void addSink(std::unique_ptr<PipelineSink> sink);
 
         void startPipeline();
         void stopPipeline();
         void createNewVideo();
 
-    protected:
-        virtual void setupRecordingPipeline() = 0;
+        GstElement* getSourceTee(); // expose for sinks
 
-        unique_ptr<GstData> gstData;
+        bool pipelineRunning;
+        bool pipelineKilled;
+        std::string recordingDir;
+        int video_duration;
+        std::string currentlyRecordingVideoName;
+    private:
+        GstElement* pipeline = nullptr;
+        GstBus* bus = nullptr;
+
+        std::unique_ptr<PipelineSource> source;
+        std::vector<std::unique_ptr<PipelineSink>> sinks;
+
         std::thread pipelineThread;
         std::string webroot;
 
+        void buildPipeline();               // NEW
         void pipelineRunner();
         bool handleBusMessage(GstBus *bus);
 };
+
+// TODO ADD getSourceTee method
+// class RecordingPipeline2 {
+//     public:
+//         // in the future, provide an optional gstreamer source to this pipeline
+//         RecordingPipeline2(const char dir[], int vid_duration, int* argc, char*** argv);
+//         ~RecordingPipeline2();
+
+//         bool pipelineRunning;
+//         bool pipelineKilled;
+//         string recordingDir;
+//         int video_duration;
+//         string currentlyRecordingVideoName;
+
+//         void startPipeline();
+//         void stopPipeline();
+//         void createNewVideo();
+
+//     protected:
+//         virtual void setupRecordingPipeline() = 0;
+
+//         unique_ptr<GstData> gstData;
+//         std::thread pipelineThread;
+//         std::string webroot;
+
+//         void pipelineRunner();
+//         bool handleBusMessage(GstBus *bus);
+// };

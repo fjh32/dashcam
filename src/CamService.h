@@ -15,9 +15,9 @@
 #include "utilities.h"
 
 #include "RecordingPipeline.h"
-#include "HlsPipeline.h"
-#include "V4l2HlsPipeline.h"
-#include "LibcameraHlsPipeline.h"
+#include "V4l2PipelineSrc.h"
+#include "TsFileSinkPipeline.h"
+#include "HlsPipelineSink.h"
 
 using namespace std;
 

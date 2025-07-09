@@ -6,12 +6,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(SOURCES
     utilities.cc
     RecordingPipeline.cc
-    HlsPipeline.cc
     TsFileSinkPipeline.cc
+    HlsPipelineSink.cc
     V4l2PipelineSrc.cc
-    LibcameraPipelineSrc.cc
-    LibcameraHlsPipeline.cc
-    V4l2HlsPipeline.cc
     CamService.cc
     main.cc
 )
@@ -19,12 +16,9 @@ set(SOURCES
 set(HEADERS
     utilities.h
     RecordingPipeline.h
-    HlsPipeline.h
     TsFileSinkPipeline.h
+    HlsPipelineSink.h
     V4l2PipelineSrc.h
-    LibcameraPipelineSrc.h
-    LibcameraHlsPipeline.h
-    V4l2HlsPipeline.h
     CamService.h
 )
 

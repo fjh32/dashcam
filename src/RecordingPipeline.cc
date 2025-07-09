@@ -17,8 +17,6 @@ RecordingPipeline::RecordingPipeline( const char dir[], int vid_duration, int* a
     gst_init(argc, argv);
 
     makeDir(recordingDir.c_str());
-
-    gstData = make_unique<GstData>();
 }
 
 RecordingPipeline::~RecordingPipeline() {
@@ -36,20 +34,47 @@ RecordingPipeline::~RecordingPipeline() {
         stopPipeline(); // this seems to segfault when using libcamera source on rpi
     }
     debugPrint("Unref'ing pipeline");
-    gst_object_unref(gstData->pipeline);
+    gst_object_unref(this->pipeline);
+}
+
+void RecordingPipeline::setSource(std::unique_ptr<PipelineSource> src) {
+    source = std::move(src);
+}
+
+void RecordingPipeline::addSink(std::unique_ptr<PipelineSink> sink) {
+    sinks.push_back(std::move(sink));
+}
+
+GstElement* RecordingPipeline::getSourceTee() {
+    return source ? source->getTee() : nullptr;
+}
+
+void RecordingPipeline::buildPipeline() {
+    this->pipeline = gst_pipeline_new("recording_pipeline");
+    if (!this->pipeline) throw std::runtime_error("Failed to create pipeline");
+
+    if (!source) throw std::runtime_error("No source set");
+    if (sinks.empty()) throw std::runtime_error("No sinks added");
+
+    source->setupSource(this->pipeline);
+
+    for (auto& sink : sinks) {
+        sink->setupSink(this->pipeline);
+    }
 }
 
 void RecordingPipeline::pipelineRunner() {
     debugPrint("startPipeline() at " + formatted_time());
 
     if(!pipelineRunning) {
-        debugPrint("Starting pipeline");
+        this->buildPipeline();
 
-        gst_element_set_state(gstData->pipeline, GST_STATE_PLAYING);
+        debugPrint("Starting pipeline");
+        gst_element_set_state(this->pipeline, GST_STATE_PLAYING);
         pipelineRunning = true;
-        gstData->bus = gst_element_get_bus(gstData->pipeline);
-        while(handleBusMessage(gstData->bus)) {}
-        gst_object_unref(gstData->bus);
+        this->bus = gst_element_get_bus(this->pipeline);
+        while(handleBusMessage(this->bus)) {}
+        gst_object_unref(this->bus);
 
         pipelineRunning = false;
     }
@@ -63,7 +88,9 @@ void RecordingPipeline::startPipeline() {
 
 void RecordingPipeline::createNewVideo() {
     debugPrint("Received createNewVideo() signal.");
-    g_signal_emit_by_name (gstData->sink, "split-now");
+    for(const auto& sink : this->sinks) {
+        g_signal_emit_by_name (sink->getSinkElement(), "split-now");
+    }
 }
 
 void RecordingPipeline::stopPipeline() {
@@ -71,10 +98,10 @@ void RecordingPipeline::stopPipeline() {
 
     if(pipelineRunning) {
         debugPrint("Sending EOS event");
-        gst_element_send_event(gstData->pipeline, gst_event_new_eos());
+        gst_element_send_event(this->pipeline, gst_event_new_eos());
         pipelineThread.join();
         debugPrint("Setting pipeline state to NULL");
-        gst_element_set_state(gstData->pipeline, GST_STATE_NULL);
+        gst_element_set_state(this->pipeline, GST_STATE_NULL);
     }
 
     debugPrint("exiting stopPipeline()");
@@ -137,7 +164,7 @@ void handle_error_naive(std::string errMsg) {
 // void RecordingPipeline::setupHardwareEncodingRecorder() {
 //     std::cout << "Setting up RPI ZERO HARDWARE ENCODING pipeline\n";
 
-//     gstData->pipeline = gst_pipeline_new("recording_pipeline");
+//     this->pipeline = gst_pipeline_new("recording_pipeline");
 
 //     gstData->source = gst_element_factory_make("libcamerasrc", "source");
 //     gstData->capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
@@ -147,7 +174,7 @@ void handle_error_naive(std::string errMsg) {
 //     gstData->h264parser = gst_element_factory_make("h264parse", "h264parser");
 //     gstData->tee = gst_element_factory_make ("tee", "tee");
 
-//     if(!gstData->pipeline || !gstData->source || !gstData->capsfilter || !gstData->videoconvert || !gstData->encoder || !gstData->post_encode_caps || !gstData->h264parser || !gstData->tee) {
+//     if(!this->pipeline || !gstData->source || !gstData->capsfilter || !gstData->videoconvert || !gstData->encoder || !gstData->post_encode_caps || !gstData->h264parser || !gstData->tee) {
 //         cout << "Failed to create elements\n";
 //         exit(1); // TODO: throw exception instead
 //     }
@@ -168,7 +195,7 @@ void handle_error_naive(std::string errMsg) {
 //     g_object_set(G_OBJECT(gstData->post_encode_caps), "caps", gst_caps_from_string("video/x-h264,level=(string)4"), NULL);
 //     /////////////////////////////////
 
-//     gst_bin_add_many(GST_BIN(gstData->pipeline), 
+//     gst_bin_add_many(GST_BIN(this->pipeline), 
 //                             gstData->source, 
 //                             gstData->capsfilter, 
 //                             gstData->videoconvert, 

@@ -15,7 +15,7 @@ include_directories(${GST_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
-add_executable( dashcam src/main.cc src/utilities.cc src/RecordingPipeline.cc src/HlsPipeline.cc src/TsFileSinkPipeline.cc src/V4l2PipelineSrc.cc src/LibcameraPipelineSrc.cc src/V4l2HlsPipeline.cc src/LibcameraHlsPipeline.cc src/CamService.cc )
+add_executable( dashcam src/main.cc src/utilities.cc src/RecordingPipeline.cc src/TsFileSinkPipeline.cc src/HlsPipelineSink.cc src/V4l2PipelineSrc.cc src/CamService.cc )
 
 # Set default value if not defined externally
 set(RPI_MODE "" CACHE STRING "Build mode: RPI, ZERO, or empty for desktop")
