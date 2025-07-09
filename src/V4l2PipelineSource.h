@@ -17,7 +17,7 @@
 
 #include "RecordingPipeline.h"
 
-class V4l2PipelineSrc : public PipelineSource {
+class V4l2PipelineSource : public PipelineSource {
     
     public:
         void wait_for_video_device();

@@ -1,4 +1,4 @@
-#include "TsFileSinkPipeline.h"
+#include "TsFilePipelineSink.h"
 
 static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointer user_data) {
     RecordingPipeline* instance = static_cast<RecordingPipeline*>(user_data);
@@ -44,18 +44,18 @@ static gchar* make_new_filename_with_playlist_file(GstElement *splitmux, guint f
 }
 
 ////////////////////////////////////////
-TsFileSinkPipeline::TsFileSinkPipeline(RecordingPipeline* context, bool makePlaylist)
+TsFilePipelineSink::TsFilePipelineSink(RecordingPipeline* context, bool makePlaylist)
     : context(context), makePlaylist(makePlaylist) {}
 
-GstPad* TsFileSinkPipeline::getSinkPad() {
+GstPad* TsFilePipelineSink::getSinkPad() {
     return gst_element_get_static_pad(queue, "sink");
 }
 
-GstElement* TsFileSinkPipeline::getSinkElement() {
+GstElement* TsFilePipelineSink::getSinkElement() {
     return sink;  // this->sink is the splitmuxsink
 }
 
-void TsFileSinkPipeline::setupSink(GstElement* pipeline) {
+void TsFilePipelineSink::setupSink(GstElement* pipeline) {
     queue = gst_element_factory_make("queue", "file_sink_queue");
     muxer = gst_element_factory_make("mpegtsmux", "muxer");
     sink = gst_element_factory_make("splitmuxsink", "sink");

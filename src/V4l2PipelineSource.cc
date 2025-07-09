@@ -1,6 +1,6 @@
-#include "V4l2PipelineSrc.h"
+#include "V4l2PipelineSource.h"
 
-void V4l2PipelineSrc::wait_for_video_device() {
+void V4l2PipelineSource::wait_for_video_device() {
     const std::string devicePath = "/dev/video0";
 
     while (!std::filesystem::exists(devicePath)) {
@@ -11,15 +11,15 @@ void V4l2PipelineSrc::wait_for_video_device() {
     std::cout << devicePath << " is now available." << std::endl;
 }
 
-GstPad* V4l2PipelineSrc::getSourcePad() {
+GstPad* V4l2PipelineSource::getSourcePad() {
     return gst_element_get_static_pad(tee, "src");
 }
 
-GstElement* V4l2PipelineSrc::getTee() {
+GstElement* V4l2PipelineSource::getTee() {
     return tee;
 }
 
-void V4l2PipelineSrc::setupSource(GstElement* pipeline) {
+void V4l2PipelineSource::setupSource(GstElement* pipeline) {
     wait_for_video_device();
 
     source = gst_element_factory_make("v4l2src", "source");

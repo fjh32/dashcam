@@ -38,7 +38,7 @@ cd ..
 echo "🔄 Reloading and enabling service..."
 sudo systemctl daemon-reload
 sudo systemctl enable dashcam.service
-sudo systemctl start dashcam.service
+sudo systemctl restart dashcam.service
 
 echo
 echo "✅ Installation complete."
