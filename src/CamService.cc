@@ -6,7 +6,14 @@ CamService::CamService(int* argc, char** argv[]) {
     recordingSaveDir = RECORDING_SAVE_DIR;
     prepDirForService();
     createListeningPipe();
-    recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
+
+    // TODO ifdefs to use specific pipeline implementations
+    #ifdef RPI_MODE
+    recordingPipeline = make_unique<LibcameraHlsPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
+    #else
+    recordingPipeline = make_unique<V4l2HlsPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
+    #endif
+
     running = false;
 }
 

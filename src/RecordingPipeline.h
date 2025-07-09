@@ -27,10 +27,6 @@ using namespace std;
 #define FRAME_RATE 15
 #endif
 
-#define HLS_FILE_ROOT "/home/frank/livestream/"
-
-static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointer user_data);
-
 class GstData {
     public:
         GstData();
@@ -48,7 +44,7 @@ class GstData {
 class RecordingPipeline {
     public:
         // in the future, provide an optional gstreamer source to this pipeline
-        RecordingPipeline(const char dir[], int vid_duration, int* argc, char** argv[]); 
+        RecordingPipeline(const char dir[], int vid_duration, int* argc, char*** argv); 
         ~RecordingPipeline();
 
         bool pipelineRunning;
@@ -61,18 +57,23 @@ class RecordingPipeline {
         void stopPipeline();
         void createNewVideo();
 
-    private:
+    protected:
+
+        virtual void setupRecordingPipeline() = 0;
+
         unique_ptr<GstData> gstData;
         std::thread pipelineThread;
         std::string webroot;
+
         void pipelineRunner();
         bool handleBusMessage(GstBus *bus);
-        void setupGstElements();
-        void setupHlsElements();
-        void setupFileSinkElements();
-        void setupSoftwareEncodingRecorder();
-        void setupHardwareEncodingRecorder();
-        void setupV4l2Recording();
-        void setupV4l2RecordingMJPG();
+
+        // void setupGstElements();
+        // void setupHlsElements();
+        // void setupFileSinkElements();
+        // void setupSoftwareEncodingRecorder();
+        // void setupHardwareEncodingRecorder();
+        // void setupV4l2Recording();
+        // void setupV4l2RecordingMJPG();
         
 };

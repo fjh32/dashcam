@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RecordingPipeline.h"
+
 
 #include <string>
 #include <iostream>
@@ -13,6 +13,11 @@
 #include <algorithm>
 #include <signal.h>
 #include "utilities.h"
+
+#include "RecordingPipeline.h"
+#include "HlsPipeline.h"
+#include "V4l2HlsPipeline.h"
+#include "LibcameraHlsPipeline.h"
 
 using namespace std;
 
