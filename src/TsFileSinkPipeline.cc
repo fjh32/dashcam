@@ -1,18 +1,27 @@
 #include "TsFileSinkPipeline.h"
 
-// callback function to create new filename for splitmuxsink
 static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointer user_data) {
     RecordingPipeline* instance = static_cast<RecordingPipeline*>(user_data);
 
     // Create filename for .ts
-    // string ts_filename = "output_" + formatted_time() + ".ts";
     string ts_filename = "output_" + formatted_time() + ".ts";
     string ts_filepath = instance->recordingDir + "/" + ts_filename;
     instance->currentlyRecordingVideoName = ts_filepath;
 
     cout << "Recording new video: " << ts_filepath << endl;
+    return g_strdup(ts_filepath.c_str());
+}
+
+// callback function to create new filename for splitmuxsink
+static gchar* make_new_filename_with_playlist_file(GstElement *splitmux, guint fragment_id, gpointer user_data) {
+    RecordingPipeline* instance = static_cast<RecordingPipeline*>(user_data);
+
+    gchar * gfilename = make_new_filename(splitmux, fragment_id, user_data);
 
     // Create matching .m3u8 playlist file
+    string ts_filepath(gfilename);
+    string ts_filename = filesystem::path(ts_filepath).filename().string();
+
     string m3u8_filename = ts_filename.substr(0, ts_filename.find_last_of(".")) + ".m3u8";
     string m3u8_filepath = instance->recordingDir + "/" + m3u8_filename;
 
@@ -31,10 +40,10 @@ static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointe
         cerr << "Error creating HLS playlist file: " << m3u8_filepath << endl;
     }
 
-    return g_strdup(ts_filepath.c_str()); // GStreamer will free this string
+    return gfilename; // GStreamer will free this string
 }
 
-void TsFileSinkPipeline::setupFileSinkElements() {
+void TsFileSinkPipeline::setupFileSinkElements(bool make_playlist_file) {
     gstData->file_sink_queue = gst_element_factory_make("queue", "file_sink_queue");
     if (!gstData->file_sink_queue) {
         std::cerr << "Error: Failed to queue in setupFileSinkElements()." << std::endl;
@@ -53,8 +62,14 @@ void TsFileSinkPipeline::setupFileSinkElements() {
         exit(1);
     }
     g_object_set(gstData->sink, "muxer", gstData->muxer, NULL);
-    g_object_set(gstData->sink, "max-size-time", (guint64)video_duration * GST_SECOND, NULL); // 30 minutes
-    g_signal_connect(gstData->sink, "format-location", G_CALLBACK(make_new_filename), this);
+    g_object_set(gstData->sink, "max-size-time", (guint64)this->video_duration * GST_SECOND, NULL); // 30 minutes
+
+    if(make_playlist_file) {
+        g_signal_connect(gstData->sink, "format-location", G_CALLBACK(make_new_filename_with_playlist_file), this);
+    }
+    else {
+        g_signal_connect(gstData->sink, "format-location", G_CALLBACK(make_new_filename), this);
+    }
 
     gst_bin_add_many(GST_BIN(gstData->pipeline), gstData->file_sink_queue, gstData->sink, NULL);
     if(!gst_element_link_many(gstData->file_sink_queue, gstData->sink, NULL)) {

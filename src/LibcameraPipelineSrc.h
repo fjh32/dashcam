@@ -17,7 +17,7 @@
 
 #include "RecordingPipeline.h"
 
-class HlsPipeline : virtual public RecordingPipeline {
+class LibcameraPipelineSrc : virtual public RecordingPipeline {
     protected:
-        void setupHlsElements();
+        void setupLibcameraSrcAndTee();
 };

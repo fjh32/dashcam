@@ -7,7 +7,6 @@ CamService::CamService(int* argc, char** argv[]) {
     prepDirForService();
     createListeningPipe();
 
-    // TODO ifdefs to use specific pipeline implementations
     #ifdef RPI_MODE
     recordingPipeline = make_unique<LibcameraHlsPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
     #else

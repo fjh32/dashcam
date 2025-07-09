@@ -17,7 +17,8 @@
 
 #include "RecordingPipeline.h"
 
-class HlsPipeline : virtual public RecordingPipeline {
+class V4l2PipelineSrc : virtual public RecordingPipeline {
     protected:
-        void setupHlsElements();
+        void setupV4l2SrcAndTee();
+        void wait_for_video_device();
 };

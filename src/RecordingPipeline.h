@@ -44,7 +44,7 @@ class GstData {
 class RecordingPipeline {
     public:
         // in the future, provide an optional gstreamer source to this pipeline
-        RecordingPipeline(const char dir[], int vid_duration, int* argc, char*** argv); 
+        RecordingPipeline(const char dir[], int vid_duration, int* argc, char*** argv);
         ~RecordingPipeline();
 
         bool pipelineRunning;
@@ -67,13 +67,4 @@ class RecordingPipeline {
 
         void pipelineRunner();
         bool handleBusMessage(GstBus *bus);
-
-        // void setupGstElements();
-        // void setupHlsElements();
-        // void setupFileSinkElements();
-        // void setupSoftwareEncodingRecorder();
-        // void setupHardwareEncodingRecorder();
-        // void setupV4l2Recording();
-        // void setupV4l2RecordingMJPG();
-        
 };

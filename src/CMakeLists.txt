@@ -8,6 +8,8 @@ set(SOURCES
     RecordingPipeline.cc
     HlsPipeline.cc
     TsFileSinkPipeline.cc
+    V4l2PipelineSrc.cc
+    LibcameraPipelineSrc.cc
     LibcameraHlsPipeline.cc
     V4l2HlsPipeline.cc
     CamService.cc
@@ -19,7 +21,9 @@ set(HEADERS
     RecordingPipeline.h
     HlsPipeline.h
     TsFileSinkPipeline.h
-    LibcameraHlsPipeline.cc
+    V4l2PipelineSrc.h
+    LibcameraPipelineSrc.h
+    LibcameraHlsPipeline.h
     V4l2HlsPipeline.h
     CamService.h
 )
