@@ -69,7 +69,7 @@ class RecordingPipeline {
         void stopPipeline();
         void createNewVideo();
 
-        GstElement* getSourceTee(); // expose for sinks
+        GstElement* getSourceTee(); // expose for PipelineSinks
 
         bool pipelineRunning;
         bool pipelineKilled;
@@ -86,7 +86,7 @@ class RecordingPipeline {
         std::thread pipelineThread;
         std::string webroot;
 
-        void buildPipeline();               // NEW
+        void buildPipeline();
         void pipelineRunner();
         bool handleBusMessage(GstBus *bus);
 };

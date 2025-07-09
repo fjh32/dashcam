@@ -9,6 +9,7 @@ set(SOURCES
     TsFileSinkPipeline.cc
     HlsPipelineSink.cc
     V4l2PipelineSrc.cc
+    LibcameraPipelineSource.cc
     CamService.cc
     main.cc
 )
@@ -19,6 +20,7 @@ set(HEADERS
     TsFileSinkPipeline.h
     HlsPipelineSink.h
     V4l2PipelineSrc.h
+    LibcameraPipelineSource.h
     CamService.h
 )
 

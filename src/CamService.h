@@ -16,6 +16,7 @@
 
 #include "RecordingPipeline.h"
 #include "V4l2PipelineSrc.h"
+#include "LibcameraPipelineSource.h"
 #include "TsFileSinkPipeline.h"
 #include "HlsPipelineSink.h"
 
