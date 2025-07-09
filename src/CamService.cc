@@ -10,12 +10,12 @@ CamService::CamService(int* argc, char** argv[]) {
     #ifdef RPI_MODE
     recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
     recordingPipeline->setSource(std::make_unique<LibcameraPipelineSource>());
-    recordingPipeline->addSink(std::make_unique<TsFileSinkPipeline>(recordingPipeline.get(), false));
+    recordingPipeline->addSink(std::make_unique<TsFileSinkPipeline>(recordingPipeline.get(), true));
     recordingPipeline->addSink(std::make_unique<HlsPipelineSink>(recordingPipeline.get()));
     #else
     recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
     recordingPipeline->setSource(std::make_unique<V4l2PipelineSrc>());
-    recordingPipeline->addSink(std::make_unique<TsFileSinkPipeline>(recordingPipeline.get(), false));
+    recordingPipeline->addSink(std::make_unique<TsFileSinkPipeline>(recordingPipeline.get(), true));
     recordingPipeline->addSink(std::make_unique<HlsPipelineSink>(recordingPipeline.get()));
     #endif
 
