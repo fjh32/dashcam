@@ -41,6 +41,20 @@ class GstData {
         GstBus *bus;
 };
 
+class PipelineSrc {
+    public:
+        virtual GstElement* getSrcPad() = 0;
+        virtual void setupSrc(GstElement* pipeline) = 0;
+        virtual void ~PipelineSrc() = default;
+};
+
+class PipelineSink {
+    public:
+        virtual GstElement* getSinkPad() = 0;
+        virtual void setupSink(GstElement* pipeline) = 0;
+        virtual void ~PipelineSink() = default;
+};
+
 class RecordingPipeline {
     public:
         // in the future, provide an optional gstreamer source to this pipeline
