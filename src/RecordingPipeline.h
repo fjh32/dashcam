@@ -72,7 +72,6 @@ class RecordingPipeline {
         void createNewVideo();
 
     protected:
-
         virtual void setupRecordingPipeline() = 0;
 
         unique_ptr<GstData> gstData;
