@@ -56,7 +56,6 @@ class RecordingPipeline {
         string recordingDir;
         int video_duration;
         string currentlyRecordingVideoName;
-        vector<string> ffmpeg_optimize_list;
 
         void startPipeline();
         void stopPipeline();
@@ -66,7 +65,6 @@ class RecordingPipeline {
         unique_ptr<GstData> gstData;
         std::thread pipelineThread;
         std::string webroot;
-        shared_ptr<std::thread> ffmpegThread;
         void pipelineRunner();
         bool handleBusMessage(GstBus *bus);
         void setupGstElements();
