@@ -142,3 +142,12 @@ std::vector<std::filesystem::directory_entry> getDirContents(std::string dir) {
     }
     return dir_contents;
 }
+
+std::time_t file_time_to_time_t(std::filesystem::file_time_type ftime) {
+    using namespace std::chrono;
+    auto sctp = time_point_cast<system_clock::duration>(
+        ftime - std::filesystem::file_time_type::clock::now()
+        + system_clock::now()
+    );
+    return system_clock::to_time_t(sctp);
+}

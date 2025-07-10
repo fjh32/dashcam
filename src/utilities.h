@@ -48,3 +48,5 @@ void get_website_root();
 std::string get_ip_address();
 
 std::vector<std::filesystem::directory_entry> getDirContents(std::string);
+
+std::time_t file_time_to_time_t(std::filesystem::file_time_type ftime) ;

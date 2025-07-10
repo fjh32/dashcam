@@ -60,46 +60,50 @@ bool CamService::isRecording() {
 void CamService::saveRecordings(int seconds_back_to_save) {
     auto current_time = now();
     auto threshold_time = current_time - seconds_back_to_save;
-    
+
     std::regex segment_pattern(R"(output_(\d+)\.ts)");
     std::regex subdir_pattern(R"(^\d+$)");
 
     std::vector<std::filesystem::directory_entry> candidates;
 
     for (const auto& dir_entry : std::filesystem::directory_iterator(recordingDir)) {
-        if (dir_entry.is_directory()) {
-            std::string subdir_name = dir_entry.path().filename().string();
-            if (!std::regex_match(subdir_name, subdir_pattern)) continue;
+        if (!dir_entry.is_directory()) continue;
 
-            for (const auto& file_entry : std::filesystem::directory_iterator(dir_entry.path())) {
-                if (!file_entry.is_regular_file()) continue;
+        std::string subdir_name = dir_entry.path().filename().string();
+        if (!std::regex_match(subdir_name, subdir_pattern)) continue;
 
-                std::string filename = file_entry.path().filename().string();
-                if (!std::regex_match(filename, segment_pattern)) continue;
+        for (const auto& file_entry : std::filesystem::directory_iterator(dir_entry)) {
+            if (!file_entry.is_regular_file()) continue;
 
-                std::time_t mtime = std::chrono::system_clock::to_time_t(
-                    std::filesystem::last_write_time(file_entry));
-                if (mtime > threshold_time) {
-                    candidates.push_back(file_entry);
-                }
+            const std::string filename = file_entry.path().filename().string();
+            if (!std::regex_match(filename, segment_pattern)) continue;
+
+            std::time_t mtime = file_time_to_time_t(std::filesystem::last_write_time(file_entry));
+            if (mtime > threshold_time) {
+                candidates.push_back(file_entry);
             }
         }
     }
+
+    this->recordingPipeline->createNewVideo();
 
     std::sort(candidates.begin(), candidates.end(), [](auto& a, auto& b) {
         return std::filesystem::last_write_time(a) > std::filesystem::last_write_time(b);
     });
 
     std::string timestamp_dir = recordingSaveDir + std::to_string(current_time) + "/";
+    std::filesystem::create_directories(timestamp_dir); // Ensure directory exists
+    std::cout << "Saving " << candidates.size() << " recent segments to " << timestamp_dir << std::endl;
     for (const auto& entry : candidates) {
         std::string src = entry.path().string();
         std::string dst = timestamp_dir + entry.path().filename().string();
 
-        //if video duration is short, we don't need to trigger a new video to be made
-        // consider this condition
-
-        std::filesystem::copy_file(src, dst, std::filesystem::copy_options::overwrite_existing);
-        std::cout << "Saved file: " << dst << std::endl;
+        try {
+            std::filesystem::copy_file(src, dst, std::filesystem::copy_options::overwrite_existing);
+            std::cout << "Saved file: " << dst << std::endl;
+        } catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "Warning: Failed to copy file from " << src << " to " << dst << ": " << e.what() << std::endl;
+        }
     }
 }
 
