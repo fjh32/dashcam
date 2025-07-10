@@ -25,21 +25,17 @@ using namespace std;
 #define PIPE_NAME "/tmp/camrecorder.pipe"
 
 #ifdef DEBUG
-#define VIDEO_DURATION 300 
-#define WEB_DIR "./dashcam_web_static/"
-#define WEB_PORT 8888
-#define WEBSITE_ROOT "192.168.1.70"
+#define VIDEO_DURATION 300
 #define RECORDING_DIR "./recordings/"
 #define RECORDING_SAVE_DIR "./recordings/save/"
-#define DELETE_OLDER_THAN 600 
+#define DELETE_OLDER_THAN 600
+#define SEGMENTS_TO_KEEP 86400 / VIDEO_DURATION * 2
 #else
-#define VIDEO_DURATION  1800 
-#define WEB_DIR "./dashcam_web_static/"
-#define WEB_PORT 80
-#define WEBSITE_ROOT "https://ripplein.space/"
+#define VIDEO_DURATION  2 
 #define RECORDING_DIR "/var/lib/dashcam/recordings/"
 #define RECORDING_SAVE_DIR "/var/lib/dashcam/recordings/save/"
-#define DELETE_OLDER_THAN 60 * 60 * 24 * 5 // 5 days
+#define DELETE_OLDER_THAN 60 * 60 * 24 * 1 // 1 days
+#define SEGMENTS_TO_KEEP 86400 / VIDEO_DURATION * 2 // 2 days
 #endif
 
 class CamService {
@@ -54,7 +50,6 @@ class CamService {
         std::unique_ptr<RecordingPipeline> recordingPipeline;
         std::mutex recordingSwapMutex;
         std::chrono::_V2::steady_clock::time_point currentVideoStartTime;
-        std::thread cleanupThread;
         string recordingSaveDir, recordingDir;
 
         void recordingLoop();
@@ -62,8 +57,6 @@ class CamService {
         void listenOnPipe();
         void removeListeningPipe();
         void makeRecordingDirs();
-        void cleanupThreadLoop();
-        void deleteOlderFiles(std::time_t threshold_time);
         void prepDirForService();
 
         bool isRecording();

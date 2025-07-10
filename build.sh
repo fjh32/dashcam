@@ -21,12 +21,16 @@ fi
 # Detect RPI mode
 if [[ "$2" == "-rpi" ]]; then
     echo "🐤 Raspberry Pi mode"
-    RPI_FLAG="-DRPI_MODE=RPI"
+    RPI_FLAG="-DRPI_MODE=ON"
 elif [[ "$2" == "-rpi0" ]]; then
-    echo "🐤 Raspberry Pi Zero mode"
-    RPI_FLAG="-DRPI_MODE=ZERO"
+    echo "🐤 Raspberry Pi Zero mode"  
+    RPI_FLAG="-DRPI_ZERO_MODE=ON"
+elif [[ "$2" == "-exp" ]]; then
+    echo "🐤 EXPERIMENTAL MODE"  
+    RPI_FLAG="-DEXPERIMENTAL_MODE=ON"
 else
-    echo "🖥️  Desktop build (no RPI_MODE)"
+    echo "🖥️  Desktop build"
+    RPI_FLAG=""
 fi
 
 mkdir -p "$DIR"

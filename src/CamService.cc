@@ -8,14 +8,22 @@ CamService::CamService(int* argc, char** argv[]) {
     createListeningPipe();
 
     #ifdef RPI_MODE
+    std::cout << "RPI MODE CamService" << std::endl;
     recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
     recordingPipeline->setSource(std::make_unique<LibcameraPipelineSource>());
-    recordingPipeline->addSink(std::make_unique<TsFilePipelineSink>(recordingPipeline.get(), true));
+    recordingPipeline->addSink(std::make_unique<TsFilePipelineSink>(recordingPipeline.get(), false,));
+    recordingPipeline->addSink(std::make_unique<HlsPipelineSink>(recordingPipeline.get()));
+    #elif defined(EXPERIMENTAL_MODE)
+    std::cout << "EXPERIMENTAL_MODE CamService" << std::endl;
+    recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, 2, argc, argv);
+    recordingPipeline->setSource(std::make_unique<V4l2PipelineSource>());
+    recordingPipeline->addSink(std::make_unique<TsFilePipelineSink>(recordingPipeline.get(), false,10));
     recordingPipeline->addSink(std::make_unique<HlsPipelineSink>(recordingPipeline.get()));
     #else
+    std::cout << "V4L2 MODE CamService" << std::endl;
     recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
     recordingPipeline->setSource(std::make_unique<V4l2PipelineSource>());
-    recordingPipeline->addSink(std::make_unique<TsFilePipelineSink>(recordingPipeline.get(), true));
+    recordingPipeline->addSink(std::make_unique<TsFilePipelineSink>(recordingPipeline.get(), false, SEGMENTS_TO_KEEP));
     recordingPipeline->addSink(std::make_unique<HlsPipelineSink>(recordingPipeline.get()));
     #endif
 
@@ -30,7 +38,7 @@ void CamService::mainLoop() {
     cout << "Starting CamService::mainLoop() at " << formatted_time() << endl;
     running = true;
     recordingPipeline->startPipeline(); // non-blocking call
-    cleanupThread = std::thread(&CamService::cleanupThreadLoop, this);
+    // cleanupThread = std::thread(&CamService::cleanupThreadLoop, this);
     listenOnPipe();
     cout << "Exiting main loop" << endl;
 }
@@ -39,7 +47,7 @@ void CamService::killMainLoop() {
     running = false;
     recordingPipeline->stopPipeline();
     
-    cleanupThread.join();
+    // cleanupThread.join();
     removeListeningPipe();
     cout << "Killed CamService at " << formatted_time() << endl;
 }
@@ -134,51 +142,9 @@ void CamService::listenOnPipe() {
     debugPrint("Closing listenOnPipe()");
 }
 
-void CamService::cleanupThreadLoop() {
-    debugPrint("Starting cleanupThreadLoop()");
-
-    time_t start_time = now();
-    std::time_t threshold_time = start_time - DELETE_OLDER_THAN;
-
-    while(running) {
-
-        time_t current_time = now();
-        auto diff = current_time - start_time;
-
-        if (diff > VIDEO_DURATION) {
-            deleteOlderFiles(threshold_time);
-            start_time = current_time;
-            threshold_time = start_time - DELETE_OLDER_THAN;
-        }
-
-        std::this_thread::sleep_for(std::chrono::seconds(1));   
-    }
-
-    debugPrint("Exiting cleanupThreadLoop()");
-}
-
-void CamService::deleteOlderFiles(std::time_t threshold_time) {
-
-    auto dir_contents = getDirContents(this->recordingDir);
-
-    for(auto &entry : dir_contents) {
-
-        std::time_t file_timestamp = time_t_from_direntry(entry);
-	    string filename = entry.path().string();
-
-        if ((file_timestamp < threshold_time) && filename.find("output_") != std::string::npos) {
-            std::filesystem::remove(entry);
-            std::cout << "Cleaned up file: " << entry.path().filename().string() << std::endl;
-        }
-
-    }
-}
-
 void CamService::prepDirForService() {
     makeDir(this->recordingDir.c_str());
     makeDir(this->recordingSaveDir.c_str());
-    std::time_t threshold_time = now() - DELETE_OLDER_THAN;
-    deleteOlderFiles(threshold_time);
 
     // delete any segment*.ts or livestream.m3u8
     static const std::regex segmentRegex(R"(segment\d*\.ts)");

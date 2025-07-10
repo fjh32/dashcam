@@ -21,14 +21,17 @@ add_executable( dashcam src/main.cc src/utilities.cc src/RecordingPipeline.cc sr
 set(RPI_MODE "" CACHE STRING "Build mode: RPI, ZERO, or empty for desktop")
 
 # Conditional Raspberry Pi definitions
-if(RPI_MODE STREQUAL "RPI")
-    message(STATUS "Building for Raspberry Pi with software encoding")
+if(RPI_MODE)
+    message(STATUS "Building for Raspberry Pi")
     target_compile_definitions(dashcam PRIVATE RPI_MODE)
-elseif(RPI_MODE STREQUAL "ZERO")
-    message(STATUS "Building for Raspberry Pi Zero with hardware encoding")
+elseif(RPI_ZERO_MODE)
+    message(STATUS "Building for Raspberry Pi Zero")
     target_compile_definitions(dashcam PRIVATE RPI_ZERO_MODE)
+elseif(EXPERIMENTAL_MODE)
+    message(STATUS "Building on EXPERIMENTAL MODE. Setting EXPERIMENTAL_MODE compile definition.")
+    target_compile_definitions(dashcam PRIVATE EXPERIMENTAL_MODE)
 else()
-    message(STATUS "Building for desktop (no RPI_MODE defined)")
+    message(STATUS "Building for desktop")
 endif()
 
 

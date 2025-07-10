@@ -115,7 +115,6 @@ bool RecordingPipeline::handleBusMessage(GstBus *bus) {
         gchar *debug_info;
         switch(GST_MESSAGE_TYPE(msg)) {
             case GST_MESSAGE_ELEMENT: {
-                cout << "Element message received." << endl;
                 const GstStructure *s = gst_message_get_structure(msg);
                 if (s && gst_structure_has_name(s, "splitmuxsink-fragment-closed")) {
                     // You can safely access fields now

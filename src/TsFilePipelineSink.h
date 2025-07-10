@@ -17,22 +17,35 @@
 
 #include "RecordingPipeline.h"
 
+#define MAX_SEGMENTS 200
+#define SEGMENT_INDEX_FILE "segment_index.txt"
+
+
 static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointer user_data);
 static gchar* make_new_filename_with_playlist_file(GstElement *splitmux, guint fragment_id, gpointer user_data);
 
 class TsFilePipelineSink : public PipelineSink {
     public:
         TsFilePipelineSink(RecordingPipeline* context, bool makePlaylist);
+        TsFilePipelineSink(RecordingPipeline* context, bool makePlaylist, int max_video_segments);
+
+        RecordingPipeline* context;
+        int segmentIndex;
+        int maxSegments;
         
         GstPad* getSinkPad() override;
         GstElement* getSinkElement() override;
         void setupSink(GstElement* pipeline) override;
+
+        void saveSegmentIndexToDisk();
         
     private:
-        RecordingPipeline* context;
+        
         bool makePlaylist;
         GstElement* queue = nullptr;
         GstElement* muxer = nullptr;
         GstElement* sink = nullptr;
         GstPad* tee_pad = nullptr;
+
+        void loadCurrentSegmentIndexFromDisk();
 };
