@@ -29,6 +29,7 @@ class V4l2PipelineSource : public PipelineSource {
         GstElement *source = nullptr;
         GstElement *queue = nullptr;
         GstElement *capsfilter = nullptr;
+        GstElement *nv12_capsfilter = nullptr;
         GstElement *videoconvert = nullptr;
         GstElement *encoder = nullptr;
         GstElement *parser = nullptr;

@@ -25,6 +25,7 @@ void V4l2PipelineSource::setupSource(GstElement* pipeline) {
     source = gst_element_factory_make("v4l2src", "source");
     queue = gst_element_factory_make("queue", "queue");
     capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
+    nv12_capsfilter = gst_element_factory_make("capsfilter", "nv12_capsfilter");
     videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
     encoder = gst_element_factory_make("x264enc", "encoder");
     parser = gst_element_factory_make("h264parse", "parser");
@@ -34,6 +35,7 @@ void V4l2PipelineSource::setupSource(GstElement* pipeline) {
         !source || 
         !videoconvert || 
         !capsfilter || 
+        !nv12_capsfilter ||
         !encoder || 
         !parser || 
         !tee) {
@@ -46,17 +48,24 @@ void V4l2PipelineSource::setupSource(GstElement* pipeline) {
     GstCaps *caps = gst_caps_new_simple("video/x-raw",
         "format", G_TYPE_STRING, "YUY2",
         "width", G_TYPE_INT, 640,
-    "height", G_TYPE_INT, 480,
+        "height", G_TYPE_INT, 480,
         "framerate", GST_TYPE_FRACTION, 30, 1,
         NULL);
     g_object_set(G_OBJECT(capsfilter), "caps", caps, NULL);
     gst_caps_unref(caps);
+
+    GstCaps* nv12_caps = gst_caps_new_simple("video/x-raw",
+        "format", G_TYPE_STRING, "NV12",
+        NULL);
+    g_object_set(G_OBJECT(nv12_capsfilter), "caps", nv12_caps, NULL);
+    gst_caps_unref(nv12_caps);
 
     gst_bin_add_many(GST_BIN(pipeline),
                      source,
                      queue,
                      capsfilter,
                      videoconvert,
+                     nv12_capsfilter,
                      encoder,
                      parser,
                      tee,
@@ -66,6 +75,7 @@ void V4l2PipelineSource::setupSource(GstElement* pipeline) {
                                 queue,
                                 capsfilter,
                                 videoconvert,
+                                nv12_capsfilter,
                                 encoder, 
                                 parser, 
                                 tee, 
