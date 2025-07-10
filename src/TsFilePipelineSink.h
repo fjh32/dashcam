@@ -38,6 +38,7 @@ class TsFilePipelineSink : public PipelineSink {
         void setupSink(GstElement* pipeline) override;
 
         void saveSegmentIndexToDisk();
+        std::string getSegmentSubdirectory();
         
     private:
         
@@ -48,4 +49,6 @@ class TsFilePipelineSink : public PipelineSink {
         GstPad* tee_pad = nullptr;
 
         void loadCurrentSegmentIndexFromDisk();
+
+        
 };

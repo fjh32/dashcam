@@ -4,15 +4,23 @@ static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointe
     TsFilePipelineSink* instance = static_cast<TsFilePipelineSink*>(user_data);
 
     int index = instance->segmentIndex;
+    instance->saveSegmentIndexToDisk();
+    std::string subdir = instance->getSegmentSubdirectory();
+    // Ensure subdirectory exists
+    std::error_code ec;
+    std::filesystem::create_directories(subdir, ec);
+    if (ec) {
+        std::cerr << "Error creating segment subdirectory " << subdir << ": " << ec.message() << std::endl;
+    }
+
+    std::string ts_filename = "output_" + std::to_string(index) + ".ts";
+    std::string ts_filepath = subdir + "/" + ts_filename;
+    instance->context->currentlyRecordingVideoName = ts_filepath;
+
     instance->segmentIndex++;
     if (instance->segmentIndex >= instance->maxSegments) {
         instance->segmentIndex = 0;
     }
-    instance->saveSegmentIndexToDisk();
-
-    std::string ts_filename = "output_" + std::to_string(index) + ".ts";
-    std::string ts_filepath = instance->context->recordingDir + "/" + ts_filename;
-    instance->context->currentlyRecordingVideoName = ts_filepath;
 
     std::cout << "Recording new video: " << ts_filepath << std::endl;
     return g_strdup(ts_filepath.c_str());
@@ -22,54 +30,31 @@ static gchar* make_new_filename(GstElement *splitmux, guint fragment_id, gpointe
 static gchar* make_new_filename_with_playlist_file(GstElement *splitmux, guint fragment_id, gpointer user_data) {
     TsFilePipelineSink* instance = static_cast<TsFilePipelineSink*>(user_data);
 
-    gchar * gfilename = make_new_filename(splitmux, fragment_id, user_data);
+    gchar* gfilename = make_new_filename(splitmux, fragment_id, user_data);
+    std::string ts_filepath(gfilename); 
+    std::filesystem::path ts_path(ts_filepath);
+    std::string ts_filename = ts_path.filename().string();
+    std::string subdir = ts_path.parent_path().string();
 
-    // Create matching .m3u8 playlist file
-    string ts_filepath(gfilename);
-    string ts_filename = filesystem::path(ts_filepath).filename().string();
+    std::string m3u8_filename = ts_filename.substr(0, ts_filename.find_last_of(".")) + ".m3u8";
+    std::string m3u8_filepath = subdir + "/" + m3u8_filename;
 
-    string m3u8_filename = ts_filename.substr(0, ts_filename.find_last_of(".")) + ".m3u8";
-    string m3u8_filepath = instance->context->recordingDir + "/" + m3u8_filename;
-
-    ofstream playlist(m3u8_filepath);
+    std::ofstream playlist(m3u8_filepath);
     if (playlist.is_open()) {
         playlist << "#EXTM3U\n";
         playlist << "#EXT-X-VERSION:3\n";
         playlist << "#EXT-X-TARGETDURATION:" << instance->context->video_duration << "\n";
         playlist << "#EXT-X-MEDIA-SEQUENCE:0\n";
         playlist << "#EXTINF:" << instance->context->video_duration << ".0,\n";
-        playlist << "/recordings/" << ts_filename << "\n";
+        playlist << "/recordings/" << ts_path.parent_path().filename().string() << "/" << ts_filename << "\n";
         playlist << "#EXT-X-ENDLIST\n";
         playlist.close();
-        cout << "Generated HLS playlist: " << m3u8_filepath << endl;
+        std::cout << "Generated HLS playlist: " << m3u8_filepath << std::endl;
     } else {
-        cerr << "Error creating HLS playlist file: " << m3u8_filepath << endl;
+        std::cerr << "Error creating HLS playlist file: " << m3u8_filepath << std::endl;
     }
 
     return gfilename; // GStreamer will free this string
-}
-
-int get_next_segment_index(const std::string& dir, int max_segments) {
-    int highest = -1;
-    static const std::regex pattern(R"(output_(\d+)\.ts)");
-
-    for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-        const std::string filename = entry.path().filename().string();
-        std::smatch match;
-        if (std::regex_match(filename, match, pattern)) {
-            try {
-                int n = std::stoi(match[1]);
-                if (n > highest && n < max_segments) {
-                    highest = n;
-                }
-            } catch (...) {
-                continue;
-            }
-        }
-    }
-
-    int next = highest + 1;
-    return (next >= max_segments) ? 0 : next;
 }
 
 ////////////////////////////////////////
@@ -157,4 +142,10 @@ void TsFilePipelineSink::loadCurrentSegmentIndexFromDisk() {
     } else {
         std::cout << "Segment index file not found. Starting from 0.\n";
     }
+}
+
+std::string TsFilePipelineSink::getSegmentSubdirectory() {
+    int subdir_digits = (int)this->segmentIndex / 1000;
+    std::filesystem::path subdir = std::filesystem::path(this->context->recordingDir) / std::to_string(subdir_digits);
+    return subdir.string();
 }

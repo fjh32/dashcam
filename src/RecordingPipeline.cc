@@ -14,6 +14,7 @@ GstData::~GstData() {}
 RecordingPipeline::RecordingPipeline( const char dir[], int vid_duration, int* argc, char*** argv) 
                             : recordingDir(dir), video_duration(vid_duration), pipelineRunning(false), currentlyRecordingVideoName("None") {
     debugPrint("Creating RecordingPipeline object");
+    this->video_duration = this->video_duration < 2 ? 2 : this->video_duration;
     gst_init(argc, argv);
 
     makeDir(recordingDir.c_str());

@@ -11,7 +11,7 @@ CamService::CamService(int* argc, char** argv[]) {
     std::cout << "RPI MODE CamService" << std::endl;
     recordingPipeline = make_unique<RecordingPipeline>(RECORDING_DIR, VIDEO_DURATION, argc, argv);
     recordingPipeline->setSource(std::make_unique<LibcameraPipelineSource>());
-    recordingPipeline->addSink(std::make_unique<TsFilePipelineSink>(recordingPipeline.get(), false,));
+    recordingPipeline->addSink(std::make_unique<TsFilePipelineSink>(recordingPipeline.get(), false, SEGMENTS_TO_KEEP));
     recordingPipeline->addSink(std::make_unique<HlsPipelineSink>(recordingPipeline.get()));
     #elif defined(EXPERIMENTAL_MODE)
     std::cout << "EXPERIMENTAL_MODE CamService" << std::endl;
@@ -60,38 +60,49 @@ bool CamService::isRecording() {
 void CamService::saveRecordings(int seconds_back_to_save) {
     auto current_time = now();
     auto threshold_time = current_time - seconds_back_to_save;
-    if(seconds_back_to_save <= VIDEO_DURATION) {
-        std::string filename = recordingPipeline->currentlyRecordingVideoName;
-        std::string baseFilename = filename.substr(filename.find_last_of("/\\") + 1);
-        std::string savePath = recordingSaveDir + baseFilename;
-        recordingPipeline->createNewVideo();
-        std::filesystem::copy_file(filename, savePath, std::filesystem::copy_options::overwrite_existing);
-        std::cout << "Saved file: " << savePath << std::endl;
+    
+    std::regex segment_pattern(R"(output_(\d+)\.ts)");
+    std::regex subdir_pattern(R"(^\d+$)");
 
-    } else {
-        auto dir_contents = getDirContents(this->recordingDir);
+    std::vector<std::filesystem::directory_entry> candidates;
 
-        // dir_contents.erase(std::remove_if(dir_contents.begin(), dir_contents.end(), [](const std::filesystem::directory_entry &entry) {
-        //     const std::string filename = entry.path().filename().string();
-        //     return filename.find(".mp4") == std::string::npos ;
-        // }), dir_contents.end());
+    for (const auto& dir_entry : std::filesystem::directory_iterator(recordingDir)) {
+        if (dir_entry.is_directory()) {
+            std::string subdir_name = dir_entry.path().filename().string();
+            if (!std::regex_match(subdir_name, subdir_pattern)) continue;
 
-        for(const auto& entry :dir_contents) {
-            std::time_t file_timestamp = time_t_from_direntry(entry);
-            if (file_timestamp > threshold_time) {
-                    std::string filename = entry.path().filename().string();
+            for (const auto& file_entry : std::filesystem::directory_iterator(dir_entry.path())) {
+                if (!file_entry.is_regular_file()) continue;
 
-                    if (recordingPipeline->currentlyRecordingVideoName.find(filename) != std::string::npos) {
-                        recordingPipeline->createNewVideo();
-                    }
+                std::string filename = file_entry.path().filename().string();
+                if (!std::regex_match(filename, segment_pattern)) continue;
 
-                    std::string savePath = recordingSaveDir + filename;
-                    std::filesystem::copy_file(entry.path(), savePath, std::filesystem::copy_options::overwrite_existing);
-                    std::cout << "Saved file: " << filename << std::endl;
+                std::time_t mtime = std::chrono::system_clock::to_time_t(
+                    std::filesystem::last_write_time(file_entry));
+                if (mtime > threshold_time) {
+                    candidates.push_back(file_entry);
+                }
             }
         }
     }
+
+    std::sort(candidates.begin(), candidates.end(), [](auto& a, auto& b) {
+        return std::filesystem::last_write_time(a) > std::filesystem::last_write_time(b);
+    });
+
+    std::string timestamp_dir = recordingSaveDir + std::to_string(current_time) + "/";
+    for (const auto& entry : candidates) {
+        std::string src = entry.path().string();
+        std::string dst = timestamp_dir + entry.path().filename().string();
+
+        //if video duration is short, we don't need to trigger a new video to be made
+        // consider this condition
+
+        std::filesystem::copy_file(src, dst, std::filesystem::copy_options::overwrite_existing);
+        std::cout << "Saved file: " << dst << std::endl;
+    }
 }
+
 
 void CamService::createListeningPipe() {
     if (mkfifo(PIPE_NAME, 0666) == -1) {
