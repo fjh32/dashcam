@@ -27,7 +27,6 @@ int64_t duration_ms(std::chrono::steady_clock::time_point start, std::chrono::st
 int64_t duration_s(std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end);
 std::string formatted_time();
 std::string format_time(const char * time_format);
-std::time_t time_t_from_direntry(std::filesystem::directory_entry dir_entry);
 
 void debugPrint(std::string message);
 

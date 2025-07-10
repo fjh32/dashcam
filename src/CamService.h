@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include <string>
 #include <iostream>
 #include <sys/stat.h>
@@ -25,11 +23,11 @@ using namespace std;
 #define PIPE_NAME "/tmp/camrecorder.pipe"
 
 #ifdef DEBUG
-#define VIDEO_DURATION 300
+#define VIDEO_DURATION 2
 #define RECORDING_DIR "./recordings/"
 #define RECORDING_SAVE_DIR "./recordings/save/"
-#define DELETE_OLDER_THAN 600
-#define SEGMENTS_TO_KEEP 86400 / VIDEO_DURATION * 2
+#define DELETE_OLDER_THAN 60 * 60 * 24 * 1 // 1 days
+#define SEGMENTS_TO_KEEP 86400 / VIDEO_DURATION * 2 // 2 days
 #else
 #define VIDEO_DURATION  2 
 #define RECORDING_DIR "/var/lib/dashcam/recordings/"
@@ -40,8 +38,8 @@ using namespace std;
 
 class CamService {
     public:
-        CamService(int* argc, char** argv[]);  // Constructor
-        ~CamService(); // Destructor
+        CamService(int* argc, char** argv[]);
+        ~CamService();
 
         void mainLoop();
         void killMainLoop();

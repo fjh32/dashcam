@@ -50,44 +50,6 @@ std::string format_time(const char * time_format) {
     return ss.str();
 }
 
-std::time_t time_t_from_direntry1(std::filesystem::directory_entry dir_entry) {
-    auto file_time = std::filesystem::last_write_time(dir_entry);
-    // Convert to system clock time point
-    auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-        file_time - std::filesystem::file_time_type::clock::now()
-        + std::chrono::system_clock::now());
-    // Convert to time_t
-    return std::chrono::system_clock::to_time_t(sctp);
-}
-
-std::time_t time_t_from_direntry(std::filesystem::directory_entry dir_entry) {
-    std::string filename = dir_entry.path().filename().string();
-
-    // Extract timestamp from filename
-    std::regex re(R"(output_(\d{2})-(\d{2})-(\d{4})_(\d{2})(\d{2})(\d{2}))");
-    std::smatch match;
-
-    if (std::regex_search(filename, match, re)) {
-        std::tm tm{};
-        tm.tm_mon = std::stoi(match[1]) - 1; // months: 0-11
-        tm.tm_mday = std::stoi(match[2]);
-        tm.tm_year = std::stoi(match[3]) - 1900;
-        tm.tm_hour = std::stoi(match[4]);
-        tm.tm_min = std::stoi(match[5]);
-        tm.tm_sec = std::stoi(match[6]);
-        tm.tm_isdst = -1;
-
-        return std::mktime(&tm);
-    }
-
-    // Fallback: return mtime
-    return std::chrono::system_clock::to_time_t(
-        std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-            std::filesystem::last_write_time(dir_entry) - std::filesystem::file_time_type::clock::now()
-            + std::chrono::system_clock::now()));
-}
-
-
 void makeDir(const char * dir) {
     if (!std::filesystem::exists(dir)) {
         if (!std::filesystem::create_directory(dir)) {

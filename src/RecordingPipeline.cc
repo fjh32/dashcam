@@ -5,10 +5,6 @@ using namespace std;
 
 void handle_error_naive(std::string errMsg);
 
-/// GstData class
-GstData::GstData() {}
-GstData::~GstData() {}
-
 
 /// RecordingPipeline class
 RecordingPipeline::RecordingPipeline( const char dir[], int vid_duration, int* argc, char*** argv) 

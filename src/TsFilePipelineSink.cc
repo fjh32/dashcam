@@ -113,7 +113,7 @@ void TsFilePipelineSink::setupSink(GstElement* pipeline) {
         exit(1);
     }
 
-    // gst_element_release_request_pad (gstData->tee, tee_video_pad);
+    // gst_element_release_request_pad (tee, tee_video_pad);
     gst_object_unref(tee_video_pad);
     gst_object_unref(queue_video_pad);
     std::cout << "File sink elements setup successfully.\n";

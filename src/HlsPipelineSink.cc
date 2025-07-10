@@ -8,7 +8,7 @@ GstPad* HlsPipelineSink::getSinkPad() {
 }
 
 GstElement* HlsPipelineSink::getSinkElement() {
-    return sink;  // this->sink is the splitmuxsink
+    return sink;
 }
 
 void HlsPipelineSink::setupSink(GstElement* pipeline) {
@@ -35,7 +35,6 @@ void HlsPipelineSink::setupSink(GstElement* pipeline) {
     std::string livestream_location = this->context->recordingDir + "/" + "livestream.m3u8";
     std::string segment_location = this->context->recordingDir + "/" + "segment%05d.ts";
 
-    // this->webroot = "http://" + get_ip_address();
     this->webroot = "/recordings/";
     #ifdef DEBUG
     this->webroot = this->webroot + ":8888";

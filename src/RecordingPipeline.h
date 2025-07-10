@@ -27,20 +27,6 @@ using namespace std;
 #define FRAME_RATE 15
 #endif
 
-class GstData {
-    public:
-        GstData();
-        ~GstData();
-        GstElement *pipeline; 
-        GstElement *extra_element;
-        GstElement *source, *queue, *capsfilter, *videoconvert, *encoder, *tee; 
-        GstElement *post_encode_caps, *h264parser;
-        GstElement *muxer, *file_sink_queue, *sink;
-        GstElement  *hls_queue, *h264parse, *hlsmux, *hlssink;
-        GstElement *videoflip;
-        GstBus *bus;
-};
-
 class PipelineSource {
     public:
         virtual GstPad* getSourcePad() = 0;
@@ -84,37 +70,8 @@ class RecordingPipeline {
         std::vector<std::unique_ptr<PipelineSink>> sinks;
 
         std::thread pipelineThread;
-        std::string webroot;
 
         void buildPipeline();
         void pipelineRunner();
         bool handleBusMessage(GstBus *bus);
 };
-
-// TODO ADD getSourceTee method
-// class RecordingPipeline2 {
-//     public:
-//         // in the future, provide an optional gstreamer source to this pipeline
-//         RecordingPipeline2(const char dir[], int vid_duration, int* argc, char*** argv);
-//         ~RecordingPipeline2();
-
-//         bool pipelineRunning;
-//         bool pipelineKilled;
-//         string recordingDir;
-//         int video_duration;
-//         string currentlyRecordingVideoName;
-
-//         void startPipeline();
-//         void stopPipeline();
-//         void createNewVideo();
-
-//     protected:
-//         virtual void setupRecordingPipeline() = 0;
-
-//         unique_ptr<GstData> gstData;
-//         std::thread pipelineThread;
-//         std::string webroot;
-
-//         void pipelineRunner();
-//         bool handleBusMessage(GstBus *bus);
-// };
