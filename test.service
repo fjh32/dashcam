@@ -1,0 +1,15 @@
+[Unit]
+After=dev-video0.device
+Requires=dev-video0.device
+Description=Dashcam Recording Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/dashcam
+Restart=always
+User=@USER@
+WorkingDirectory=/var/lib/dashcam/recordings
+
+[Install]
+WantedBy=multi-user.target

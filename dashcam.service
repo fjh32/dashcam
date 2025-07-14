@@ -1,0 +1,16 @@
+#Put me in /etc/systemd/system/
+[Unit]
+Description=Dashcam
+After=network.target
+
+[Service]
+WorkingDirectory=/home/frank/dashcam
+Type=simple
+User=frank
+ExecStart=/home/frank/dashcam/release_build/dashcam
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
