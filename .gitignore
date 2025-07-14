@@ -21,3 +21,5 @@ cmake_install.cmake
 .priv_git/*
 .private_git
 .private_git/*
+.public_git/*
+.public_git
